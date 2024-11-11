@@ -86,7 +86,7 @@ export default function Index() {
     }, [startGoogleOAuthFlow]);
 
     const navigateToSignIn = () => {
-        //router.push('/signin');
+        //router.push('/(public)/signin');  
     };
 
     return(
