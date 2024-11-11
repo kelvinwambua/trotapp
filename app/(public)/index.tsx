@@ -1,3 +1,4 @@
+
 import { useOAuth, useSignUp } from '@clerk/clerk-expo';
 import {Text, View, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput} from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
@@ -15,8 +16,9 @@ export default function Index() {
     const router = useRouter()
     const [emailAddress, setEmailAddress] = useState("");
     const [password, setPassword] = useState("");
+    const [code, setCode] = useState("");
     const [pendingVerification, setPendingVerification] = useState(false)
-    const [code, setCode] = useState('')
+    const [verificationEmail, setVerificationEmail] = useState('');
 
     const {startOAuthFlow} = useOAuth({strategy: "oauth_facebook"});
     const {startOAuthFlow: startGoogleOAuthFlow} = useOAuth({strategy: "oauth_google"});
@@ -29,14 +31,17 @@ export default function Index() {
         }
 
         try {
+            console.log("Creating user with email:", emailAddress)
             await signUp.create({
                 emailAddress,
                 password,
             })
 
+            setVerificationEmail(emailAddress);
+            
             await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-
             setPendingVerification(true)
+            console.log("Verification email sent. Switching to verification view.")
         } catch (err: any) {
             console.error(JSON.stringify(err, null, 2))
         }
@@ -86,21 +91,24 @@ export default function Index() {
     }, [startGoogleOAuthFlow]);
 
     const navigateToSignIn = () => {
-        //router.push('/(public)/signin');  
+        //router.push('/(auth)/sign-in');
     };
+
+    console.log("Pending verification state:", pendingVerification);
 
     return(
         <View style={styles.container}>
-            <Image
-                source={require("@/assets/images/car.jpg")}
-                style={styles.loginImage}
-            />
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.headerContainer}>
-                    <Text style={styles.title}>Welcome to Trot</Text>
-                    <Text style={styles.subtitle}>On Your Way, On Your Time</Text>
-                </View>
+        <Image
+            source={require("@/assets/images/car.jpg")}
+            style={styles.loginImage}
+        />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.headerContainer}>
+                <Text style={styles.title}>Welcome to Trot</Text>
+                <Text style={styles.subtitle}>On Your Way, On Your Time</Text>
+            </View>
 
+            {!pendingVerification && (
                 <View style={styles.formContainer}>
                     <TextInput
                         style={styles.input}
@@ -166,9 +174,47 @@ export default function Index() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </ScrollView>
+            )}
+
+            {pendingVerification && (
+                <View style={styles.verificationContainer}>
+                    <Text style={styles.verificationTitle}>Check your email</Text>
+                    <Text style={styles.verificationSubtitle}>
+                        We've sent a verification code to{'\n'}{verificationEmail}
+                    </Text>
+                    
+                    <View style={styles.codeInputContainer}>
+                        <TextInput
+                            style={[styles.input, styles.codeInput]}
+                            value={code}
+                            placeholder="Enter verification code"
+                            placeholderTextColor="#666"
+                            onChangeText={setCode}
+                            keyboardType="numeric"
+                            maxLength={6}
+                            autoFocus={true}
+                        />
+                    </View>
+
+                    <TouchableOpacity 
+                        style={[styles.signUpButton, styles.verifyButton]} 
+                        onPress={onPressVerify}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.signUpButtonText}>Verify Email</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.resendContainer}>
+                        <Text style={styles.resendText}>Didn't receive the code?</Text>
+                        <TouchableOpacity onPress={onSignUpPress}>
+                            <Text style={styles.resendLink}>Resend Code</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+        </ScrollView>
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -176,13 +222,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
-    scrollContent: {
-        flexGrow: 1,
-    },
     loginImage: {
         width: "100%",
         height: 300,
         resizeMode: "cover",
+    },
+    scrollContent: {
+        flexGrow: 1,
+        backgroundColor: '#fff',
     },
     headerContainer: {
         alignItems: 'center',
@@ -278,6 +325,53 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     signInLink: {
+        fontSize: 14,
+        color: '#000',
+        fontWeight: '600',
+    },
+    verificationContainer: {
+        padding: 24,
+        gap: 16,
+        alignItems: 'center',
+    },
+    verificationTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#000',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    verificationSubtitle: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 24,
+        lineHeight: 22,
+    },
+    codeInputContainer: {
+        width: '100%',
+        marginBottom: 16,
+    },
+    codeInput: {
+        textAlign: 'center',
+        letterSpacing: 1,
+        fontSize: 20,
+    },
+    verifyButton: {
+        width: '100%',
+    },
+    resendContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 16,
+        gap: 4,
+    },
+    resendText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    resendLink: {
         fontSize: 14,
         color: '#000',
         fontWeight: '600',
