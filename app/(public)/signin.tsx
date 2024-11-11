@@ -1,73 +1,62 @@
+
 import { useOAuth, useSignUp } from '@clerk/clerk-expo';
 import {Text, View, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput} from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
-import { useCallback, useState } from 'react';
+import {  useCallback, useEffect, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { useRouter } from 'expo-router';
-
+import { useNavigation, useRouter } from 'expo-router';
+import { useSignIn } from '@clerk/clerk-expo'
+import React from 'react';
 WebBrowser.maybeCompleteAuthSession();
 
 export default function Index() {
-    const { isLoaded, signUp, setActive } = useSignUp()
+    const navigation = useNavigation();
+
+    useEffect(() => {
+        navigation.setOptions({
+            title:'',	
+        });
+    }, [navigation]);
+    const { isLoaded, signIn, setActive } = useSignIn()
     const router = useRouter()
     const [emailAddress, setEmailAddress] = useState("");
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
     const [pendingVerification, setPendingVerification] = useState(false)
     const [verificationEmail, setVerificationEmail] = useState('');
+ 
 
     const {startOAuthFlow} = useOAuth({strategy: "oauth_facebook"});
     const {startOAuthFlow: startGoogleOAuthFlow} = useOAuth({strategy: "oauth_google"});
 
     const data = useQuery(api.users.getAllUsers);
     
-    const onSignUpPress = async () => {
+    const onSignInPress = React.useCallback(async () => {
         if (!isLoaded) {
-            return
+          return
         }
-
+    
         try {
-            console.log("Creating user with email:", emailAddress)
-            await signUp.create({
-                emailAddress,
-                password,
-            })
-
-            setVerificationEmail(emailAddress);
-            
-            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-            setPendingVerification(true)
-            console.log("Verification email sent. Switching to verification view.")
+          const signInAttempt = await signIn.create({
+            identifier: emailAddress,
+            password,
+          })
+    
+          if (signInAttempt.status === 'complete') {
+            await setActive({ session: signInAttempt.createdSessionId })
+            router.replace('/')
+          } else {
+            // See https://clerk.com/docs/custom-flows/error-handling
+            // for more info on error handling
+            console.error(JSON.stringify(signInAttempt, null, 2))
+          }
         } catch (err: any) {
-            console.error(JSON.stringify(err, null, 2))
+          console.error(JSON.stringify(err, null, 2))
         }
-    }
+      }, [isLoaded, emailAddress, password])
 
-    const onPressVerify = async () => {
-        if (!isLoaded) {
-            return
-        }
-
-        try {
-            const completeSignUp = await signUp.attemptEmailAddressVerification({
-                code,
-            })
-
-            if (completeSignUp.status === 'complete') {
-                await setActive({ session: completeSignUp.createdSessionId })
-                router.replace('/')
-            } else {
-                console.error(JSON.stringify(completeSignUp, null, 2))
-            }
-        } catch (err: any) {
-            console.error(JSON.stringify(err, null, 2))
-        }
-    }
-
-    const handleFacebookLogin = useCallback(async () => {
+      const handleFacebookLogin = useCallback(async () => {
         try {
             const {createdSessionId, setActive} = await startOAuthFlow();
             if (createdSessionId && setActive) {
@@ -89,8 +78,8 @@ export default function Index() {
         }
     }, [startGoogleOAuthFlow]);
 
-    const navigateToSignIn = () => {
-        //router.push('/(auth)/sign-in');
+    const navigateToSignUp = () => {
+        router.push('/(public)')
     };
 
     console.log("Pending verification state:", pendingVerification);
@@ -98,11 +87,11 @@ export default function Index() {
     return(
         <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.headerContainer}>
-                <Text style={styles.title}>Welcome to Trot</Text>
+                <Text style={styles.title}> Sign In to Trot App</Text>
                 <Text style={styles.subtitle}>On Your Way, On Your Time</Text>
             </View>
 
-            {!pendingVerification && (
+            
                 <View style={styles.formContainer}>
                     <TextInput
                         style={styles.input}
@@ -123,10 +112,10 @@ export default function Index() {
 
                     <TouchableOpacity 
                         style={styles.signUpButton} 
-                        onPress={onSignUpPress}
+                        onPress={onSignInPress}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.signUpButtonText}>Sign Up</Text>
+                        <Text style={styles.signUpButtonText}>Sign In</Text>
                     </TouchableOpacity>
 
                     <View style={styles.dividerContainer}>
@@ -162,50 +151,17 @@ export default function Index() {
                     </View>
 
                     <View style={styles.signInContainer}>
-                        <Text style={styles.signInText}>Already have an account?</Text>
-                        <TouchableOpacity onPress={navigateToSignIn}>
-                            <Text style={styles.signInLink}>Sign In</Text>
+                        <Text style={styles.signInText}>Don't have an account?</Text>
+                        <TouchableOpacity onPress={navigateToSignUp}>
+                            <Text style={styles.signInLink}>Sign Up</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
-            )}
+        
 
-            {pendingVerification && (
-                <View style={styles.verificationContainer}>
-                    <Text style={styles.verificationTitle}>Check your email</Text>
-                    <Text style={styles.verificationSubtitle}>
-                        We've sent a verification code to{'\n'}{verificationEmail}
-                    </Text>
-                    
-                    <View style={styles.codeInputContainer}>
-                        <TextInput
-                            style={[styles.input, styles.codeInput]}
-                            value={code}
-                            placeholder="Enter verification code"
-                            placeholderTextColor="#666"
-                            onChangeText={setCode}
-                            keyboardType="numeric"
-                            maxLength={6}
-                            autoFocus={true}
-                        />
-                    </View>
-
-                    <TouchableOpacity 
-                        style={[styles.signUpButton, styles.verifyButton]} 
-                        onPress={onPressVerify}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={styles.signUpButtonText}>Verify Email</Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.resendContainer}>
-                        <Text style={styles.resendText}>Didn't receive the code?</Text>
-                        <TouchableOpacity onPress={onSignUpPress}>
-                            <Text style={styles.resendLink}>Resend Code</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
+          
+         
+            
         </ScrollView>
     );
 }

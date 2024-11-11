@@ -59,7 +59,7 @@ export default function Index() {
 
             if (completeSignUp.status === 'complete') {
                 await setActive({ session: completeSignUp.createdSessionId })
-                router.replace('/')
+                router.push('/(public)/moreinfo')
             } else {
                 console.error(JSON.stringify(completeSignUp, null, 2))
             }
@@ -91,7 +91,7 @@ export default function Index() {
     }, [startGoogleOAuthFlow]);
 
     const navigateToSignIn = () => {
-        //router.push('/(auth)/sign-in');
+        router.push('/(public)/signin')
     };
 
     console.log("Pending verification state:", pendingVerification);
@@ -104,7 +104,7 @@ export default function Index() {
         />
         <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.headerContainer}>
-                <Text style={styles.title}>Welcome to Trot</Text>
+                <Text style={styles.title}>Welcome to Trot App</Text>
                 <Text style={styles.subtitle}>On Your Way, On Your Time</Text>
             </View>
 

@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ivy.trotapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -34,6 +35,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3c06083a-ed72-4bd5-9a50-e71641c050f2"
+      }
     }
   }
 }
