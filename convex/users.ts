@@ -1,6 +1,18 @@
 import { v } from 'convex/values';
 import { internalMutation, mutation, query, QueryCtx } from './_generated/server';
 import { Id } from './_generated/dataModel';
+export const getAllUsers= query({
+  args: {},
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .collect();
+
+    return user;
+
+  
+  },
+});
 
 export const getUserByClerkId = query({
   args: {
