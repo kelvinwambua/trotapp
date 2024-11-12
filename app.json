@@ -12,6 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ivy.trotapp"
@@ -31,7 +32,18 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+                "@rnmapbox/maps",
+                {
+                  "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoia2Vsdmlud2FtYnVhc3llbmdvIiwiYSI6ImNtMzVyZW1pNjA3MXAyaXF5eDA4NnFnZTkifQ.M9kqRHZYlL4HMo_bWPbZNA"
+  }],
+  [
+    "expo-location",
+    {
+      "locationWhenInUsePermission": "Show current location on map."
+    }
+  ]
     ],
     "experiments": {
       "typedRoutes": true

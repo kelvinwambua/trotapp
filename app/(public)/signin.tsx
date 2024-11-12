@@ -8,6 +8,8 @@ import { api } from '@/convex/_generated/api';
 import { useNavigation, useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo'
 import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 WebBrowser.maybeCompleteAuthSession();
 
 export default function Index() {
@@ -20,7 +22,7 @@ export default function Index() {
     }, [navigation]);
     const { isLoaded, signIn, setActive } = useSignIn()
     const router = useRouter()
-    const [emailAddress, setEmailAddress] = useState("");
+    const [emailAddress, setEmailAddress] = useState(""); 
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
     const [pendingVerification, setPendingVerification] = useState(false)
@@ -124,31 +126,37 @@ export default function Index() {
                         <View style={styles.divider} />
                     </View>
 
-                    <View style={styles.socialButtonsContainer}>
-                        <TouchableOpacity 
-                            style={styles.socialButton} 
-                            onPress={handleFacebookLogin}
-                            activeOpacity={0.7}
-                        >
-                            <Image
-                                source={require("@/assets/images/facebook.png")}
-                                style={styles.socialButtonIcon}
-                            />
-                            <Text style={styles.socialButtonText}>Facebook</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                            style={styles.socialButton} 
-                            onPress={handleGoogleLogin}
-                            activeOpacity={0.7}
-                        >
-                            <Image
-                                source={require("@/assets/images/google.png")}
-                                style={styles.socialButtonIcon}
-                            />
-                            <Text style={styles.socialButtonText}>Google</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                      style={styles.loginButton} 
+                      onPress={handleFacebookLogin}
+                      activeOpacity={0.7}
+                  >
+                      <View style={styles.loginButtonContent}>
+                          <Image
+                              source={require("@/assets/images/facebook.png")}
+                              style={styles.loginButtonIcon}
+                          />
+                          <Text style={styles.loginButtonText}>Sign in with Facebook</Text>
+                          <Ionicons name="chevron-forward" size={24} color="#000"/>
+                      </View>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                      style={styles.loginButton} 
+                      onPress={handleGoogleLogin}
+                      activeOpacity={0.7}
+                  >
+                      <View style={styles.loginButtonContent}>
+                          <Image
+                              source={require("@/assets/images/google.png")}
+                              style={styles.loginButtonIcon}
+                          />
+                          <Text style={styles.loginButtonText}>Sign in with Google</Text>
+                          <Ionicons name="chevron-forward" size={24} color="#000"/>
+                      </View>
+                  </TouchableOpacity>
+              </View>
 
                     <View style={styles.signInContainer}>
                         <Text style={styles.signInText}>Don't have an account?</Text>
@@ -256,6 +264,47 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#000',
         fontWeight: '500',
+    },
+    buttonContainer: {
+        padding: 20,
+        gap: 20,
+        width: "100%",
+        alignItems: 'center',
+    },
+    loginButton: {
+        width: 300,
+        height: 50,
+        backgroundColor: "#fff",
+        padding: 10,
+        borderRadius: 8,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: Colors.border,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    loginButtonContent: {  
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 10,
+    },
+    loginButtonIcon: {
+        width: 24,
+        height: 24,
+        resizeMode: "contain",
+    },
+    loginButtonText: {
+        fontFamily: 'DMSans_500Medium',
+        fontSize: 16,
+        color: '#000',
+        flex: 1,
+        marginLeft: 10,
     },
     signInContainer: {
         flexDirection: 'row',

@@ -60,8 +60,8 @@ export const createUser = internalMutation({
   args: {
     clerkId: v.string(),
     email: v.string(),
-    first_name: v.optional(v.string()),
-    last_name: v.optional(v.string()),
+    first_name: v.optional(v.union(v.string(),v.null())),
+    last_name: v.optional(v.union(v.string(),v.null())),
     imageUrl: v.optional(v.string()),
     username: v.union(v.string(), v.null()),
     bio: v.optional(v.string()),

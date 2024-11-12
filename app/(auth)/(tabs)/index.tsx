@@ -1,21 +1,46 @@
-import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useNavigation } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedScrollHandler,
-  runOnJS,
-} from 'react-native-reanimated';
+import React, { useEffect, useState } from 'react';
+import Mapbox, { MapView, Camera, PointAnnotation } from "@rnmapbox/maps";
+import * as Location from 'expo-location';
+import Animated, { useSharedValue, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+
+Mapbox.setAccessToken("sk.eyJ1Ijoia2Vsdmlud2FtYnVhc3llbmdvIiwiYSI6ImNtMzVyZW1pNjA3MXAyaXF5eDA4NnFnZTkifQ.M9kqRHZYlL4HMo_bWPbZNA");
+
+
+type LocationType = {
+  latitude: number;
+  longitude: number;
+};
 
 const Page = () => {
   const users = useQuery(api.users.getAllUsers);
   const navigation = useNavigation();
 
-  // Create a shared value to store the scroll offset
+  const [userLocation, setUserLocation] = useState<LocationType | null>(null);
   const scrollOffset = useSharedValue(0);
   const tabBarHeight = useBottomTabBarHeight();
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+    
+      if (status !== 'granted') {
+        console.log("Permission to access location was denied");
+        return;
+      }
+
+      
+      const location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    })();
+  }, []);
 
   const updateTabbar = () => {
     let newMarginBottom = 0;
@@ -24,11 +49,9 @@ const Page = () => {
     } else if (scrollOffset.value > tabBarHeight) {
       newMarginBottom = -tabBarHeight;
     }
-
     navigation.setOptions({ tabBarStyle: { marginBottom: newMarginBottom } });
   };
 
-  // Create an animated scroll handler
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollOffset.value = event.contentOffset.y;
@@ -37,56 +60,55 @@ const Page = () => {
   });
 
   return (
-    <Animated.ScrollView onScroll={scrollHandler} scrollEventThrottle={16}>
-      <Text style={styles.dummyText}>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-        laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-        voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed
-        ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque
-        laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
-        architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit
-        aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione
-        voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-        consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et
-        dolore magnam aliquam quaerat voluptatem.
-      </Text>
-      <Text style={styles.dummyText}>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-        laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-        voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed
-        ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque
-        laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
-        architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit
-        aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione
-        voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-        consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et
-        dolore magnam aliquam quaerat voluptatem.
-      </Text>
-      <Text style={styles.dummyText}>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-        laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-        voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed
-        ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque
-        laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
-        architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit
-        aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione
-        voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-        consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et
-        dolore magnam aliquam quaerat voluptatem.
-      </Text>
-    </Animated.ScrollView>
+    <View style={styles.page}>
+      <MapView 
+        style={styles.map} 
+        styleURL="mapbox://styles/mapbox/navigation-night-v1"
+      >
+        {userLocation && (
+          <>
+            <Camera
+              zoomLevel={14}  
+              centerCoordinate={[userLocation.longitude, userLocation.latitude]}
+              animationMode="flyTo"
+              animationDuration={2000}
+            />
+            <PointAnnotation
+              id="userLocationPin"
+              coordinate={[userLocation.longitude, userLocation.latitude]}
+            >
+              <View style={styles.pin}>
+                <View style={styles.pinCore} />
+              </View>
+            </PointAnnotation>
+          </>
+        )}
+      </MapView>
+    </View>
   );
 };
+
 export default Page;
+
 const styles = StyleSheet.create({
-  dummyText: {
-    fontSize: 16,
-    color: 'black',
+  page: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+  pin: {
+    height: 30,
+    width: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0, 122, 255, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinCore: {
+    height: 15,
+    width: 15,
+    borderRadius: 7.5,
+    backgroundColor: 'white',
   },
 });

@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
         marginBottom: 8,
+        fontFamily: 'DMSans_700Bold',
     },
     subtitle: {
         fontSize: 18,
