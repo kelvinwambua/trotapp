@@ -14,6 +14,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function Index() {
     const { isLoaded, signUp, setActive } = useSignUp()
     const router = useRouter()
+    
     const [emailAddress, setEmailAddress] = useState("");
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");

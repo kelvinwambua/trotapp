@@ -20,7 +20,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <MaterialIcons name="account-circle" size={50} color="black" />
-      <Image source={{ uri: user.hasImage }} style={{ width: 200, height: 200 }} />
+     
       <Text style={styles.title}>
         Hello, {user.firstName} {user.lastName} 
       </Text>

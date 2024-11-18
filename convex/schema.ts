@@ -44,4 +44,5 @@ export default defineSchema({
     searchField: 'username',
   }),
   messages: defineTable(Message),
+  posts:defineTable(Post),
 });
