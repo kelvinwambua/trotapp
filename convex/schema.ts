@@ -15,16 +15,28 @@ export const User = {
   RentCount: v.number(),
   RenteeCount: v.number(),
 };
+export const Post =  {
+  posterId: v.id('users'),
+  carReg: v.string(),
+  carMake: v.string(),
+  carModel: v.string(),
+  carYear: v.string(),
+  rentRange: v.string(),
+  carLocation: v.string(),
+  carDescription: v.string(),
+  carImageUrl: v.string(),
+  postDate: v.string(),
+}
 
 export const Message = {
-  userId: v.id('users'), // Foreign key to users table
+  userId: v.id('users'), 
   threadId: v.optional(v.string()),
   content: v.string(),
-  likeCount: v.number(), // Default value 0
-  commentCount: v.number(), // Default value 0
-  retweetCount: v.number(), // Default value 0
-  mediaFiles: v.optional(v.array(v.string())), // Array of media file URLs
-  websiteUrl: v.optional(v.string()), // Optional website URL
+  likeCount: v.number(), 
+  commentCount: v.number(), 
+  retweetCount: v.number(), 
+  mediaFiles: v.optional(v.array(v.string())), 
+  websiteUrl: v.optional(v.string()), 
 };
 
 export default defineSchema({

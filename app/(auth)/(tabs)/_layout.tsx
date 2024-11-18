@@ -28,7 +28,9 @@ const Layout = () => {
         name="index"
         options={{
           title: 'Home',
+          headerShown: false,
           tabBarIcon: ({ color, size, focused }) => (
+            
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
           headerRight: () => (

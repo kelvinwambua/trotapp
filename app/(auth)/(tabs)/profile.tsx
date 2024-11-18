@@ -10,7 +10,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 export default function ProfileScreen() {
   const { signOut } = useAuth();
   const { isLoaded, isSignedIn, user } = useUser()
-  
+
   if (!isLoaded || !isSignedIn) {
     return (
     <View style={styles.container}>
@@ -21,9 +21,9 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <MaterialIcons name="account-circle" size={50} color="black" />
-      <Image source={{ uri: user.hasImage }} style={{ width: 200, height: 200 }} />
+      <Image source={{ uri: user.imageUrl }} style={{ width: 200, height: 200 }} />
       <Text style={styles.title}>
-        Hello, {user.firstName} {user.lastName}
+        Hello, {user.firstName} {user.lastName} 
       </Text>
       <Button 
         title='Log out'
