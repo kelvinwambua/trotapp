@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
+import { useUser } from '@clerk/clerk-expo';
 
 const CreateTabIcon = ({ color, size }: { color: string; size: number }) => (
   <View style={styles.createIconContainer}>
@@ -14,6 +15,7 @@ const CreateTabIcon = ({ color, size }: { color: string; size: number }) => (
 
 const Layout = () => {
   const { signOut } = useAuth();
+  const {user} = useUser();
   const router = useRouter();
 
   return (

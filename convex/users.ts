@@ -66,7 +66,10 @@ export const createUser = internalMutation({
     username: v.union(v.string(), v.null()),
     bio: v.optional(v.string()),
     websiteUrl: v.optional(v.string()),
-    followersCount: v.number(),
+    MoneyEarned: v.number(),
+    MoneySpent: v.number(),
+    RentCount: v.number(),
+    RenteeCount: v.number(),
   },
   handler: async (ctx, args) => {
     const userId = await ctx.db.insert('users', {

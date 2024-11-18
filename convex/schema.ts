@@ -2,17 +2,18 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 export const User = {
-  email: v.string(),
   clerkId: v.string(),
+  email: v.string(),
+  first_name: v.optional(v.union(v.string(),v.null())),
+  last_name: v.optional(v.union(v.string(),v.null())),
   imageUrl: v.optional(v.string()),
-  first_name: v.optional(v.union(v.string(), v.null())),
-  last_name: v.optional(v.union(v.string(), v.null())),
-  username: v.optional(v.string()), 
+  username: v.union(v.string(), v.null()),
   bio: v.optional(v.string()),
-  location: v.optional(v.string()),
   websiteUrl: v.optional(v.string()),
-  followersCount: v.number(),
-  pushToken: v.optional(v.string()),
+  MoneyEarned: v.number(),
+  MoneySpent: v.number(),
+  RentCount: v.number(),
+  RenteeCount: v.number(),
 };
 
 export const Message = {

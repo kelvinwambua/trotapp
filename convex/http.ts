@@ -17,14 +17,21 @@ export const doSomething = httpAction(async (ctx, request) => {
             email: data.email_addresses[0].email_address,
             imageUrl: data.image_url,
             username: data.username || "",
-            followersCount: 0,
-          });
+            bio: data.bio || "",
+            websiteUrl: data.website_url || "",
+            MoneyEarned: 0,
+            MoneySpent: 0,
+            RentCount: 0,
+            RenteeCount: 0,
+            
+            
+            });
       break;
     case "user.updated":
       console.log("User updated", data)
       break;
     case "user.deleted":
-      console.log("User deleted", data)
+      await ctx.runMutation(internal.users.deleteFromClerk, {clerkUserId: data.id});
       break;
     default:
       break;
