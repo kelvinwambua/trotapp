@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert } from 'react-native';
 import { useUser, useAuth }  from '@clerk/clerk-expo';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-
 
 
 
@@ -10,7 +9,6 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 export default function ProfileScreen() {
   const { signOut } = useAuth();
   const { isLoaded, isSignedIn, user } = useUser()
-  
   if (!isLoaded || !isSignedIn) {
     return (
     <View style={styles.container}>
@@ -21,7 +19,6 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <MaterialIcons name="account-circle" size={50} color="black" />
-      <Image source={{ uri: user.hasImage }} style={{ width: 200, height: 200 }} />
       <Text style={styles.title}>
         Hello, {user.firstName} {user.lastName}
       </Text>
@@ -30,7 +27,6 @@ export default function ProfileScreen() {
         onPress={() => signOut()}
         color="#ed1109"
       ></Button>
-    
     </View>
   );
 }
