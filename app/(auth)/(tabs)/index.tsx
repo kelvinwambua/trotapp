@@ -5,7 +5,7 @@ import { useNavigation } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import Mapbox, { MapView, Camera, PointAnnotation } from "@rnmapbox/maps";
 import * as Location from 'expo-location';
-import Animated, { useSharedValue, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated';
+import  { useSharedValue, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
 Mapbox.setAccessToken("sk.eyJ1Ijoia2Vsdmlud2FtYnVhc3llbmdvIiwiYSI6ImNtMzVyZW1pNjA3MXAyaXF5eDA4NnFnZTkifQ.M9kqRHZYlL4HMo_bWPbZNA");
