@@ -1,4 +1,4 @@
-## Welcome to Zura
+## Welcome to TrotApp
 The Tech Stach so far:
 
 - Expo- Frontend
@@ -38,12 +38,12 @@ npm install --global yarn
 
 1. Clone the repository
 ```
-git clone https://github.com/kelvinwambua/zura.git
+git clone https://github.com/kelvinwambua/trotapp.git
 ```
 
 2. Navigate to the project directory
 ```
-cd zura
+cd trotapp
 ```
 
 3. Install the dependencies
