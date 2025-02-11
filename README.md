@@ -1,51 +1,100 @@
-# Welcome to your Expo app 👋
+## Welcome to TrotApp
+The Tech Stach so far:
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+- Expo- Frontend
+- Convex- Backend
+- Clerk- Authentication
 
-## Get started
+## How to run the project (I will only do for android)
 
-1. Install dependencies
+Prerequisites(Click the link to install):
+- Node.js: https://nodejs.org/en/download/
+- Yarn: https://yarnpkg.com/getting-started/install
+- Expo CLI: https://docs.expo.dev/get-started/installation/
+- Android Studio: https://developer.android.com/studio
+- Android SDK: https://developer.android.com/studio/releases/platform-tools
+- Git: https://git-scm.com/downloads
 
-   ```bash
-   npm install
-   ```
+# How to configure git after installing it
 
-2. Start the app
+1. Open Git Bash(Just search for it in your search bar)
+2. Run the following command:
+```
+git config --global user.name "Sam Lole"
+git config --global user.email "samlole@gmail.com"
+```   
 
-   ```bash
-    npx expo start
-   ```
+# How to install yarn
 
-In the output, you'll find options to open the app in a
+1. Open Git Bash(Just search for it in your search bar)
+2. Run the following command:
+```
+npm install --global yarn
+```   
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+## Steps to run the project(Run all these commands in your terminal/ Command Prompt)
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+1. Clone the repository
+```
+git clone https://github.com/kelvinwambua/trotapp.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Navigate to the project directory
+```
+cd trotapp
+```
 
-## Learn more
+3. Install the dependencies
+```
+yarn 
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## How to run the project on android emulator or device
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# Android Device
 
-## Join the community
+1. Connect your android device to your computer
+2. Run the following command:
+```
+yarn android
+```
 
-Join our community of developers creating universal apps.
+# Android Emulator
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# trotapp
+We need to set up the emulator and set up android developer debugger
+
+1. Open Android Studio
+2. Click on the emulator icon
+3. Select the emulator you want to use
+4. Run the following command:
+```
+yarn android
+```
+
+# IOS
+
+1. Open Xcode
+2. Run the following command:
+```
+yarn ios
+```
+
+# Web
+
+1. Run the following command:
+```
+yarn web
+```
+
+This should  work on all platforms
+If you have any issues, please let me know.
+
+
+
+
+
+
+
+
