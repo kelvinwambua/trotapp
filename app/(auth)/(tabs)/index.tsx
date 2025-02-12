@@ -63,6 +63,10 @@ const Page = () => {
     <View style={styles.page}>
       <MapView 
         style={styles.map} 
+        scaleBarEnabled={false}
+        logoEnabled={false}
+        compassEnabled={true}
+        
         styleURL="mapbox://styles/mapbox/navigation-night-v1"
       >
         {userLocation && (

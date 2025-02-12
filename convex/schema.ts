@@ -24,8 +24,10 @@ export const Post =  {
   rentRange: v.string(),
   carLocation: v.string(),
   carDescription: v.string(),
-  carImageUrl: v.string(),
+  carImageUrl: v.array(v.string()),
   postDate: v.string(),
+   fuelType: v.optional(v.string()),
+  features: v.optional(v.array(v.string())),
 }
 
 export const Message = {
