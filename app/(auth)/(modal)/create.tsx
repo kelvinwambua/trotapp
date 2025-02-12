@@ -1,28 +1,119 @@
-import { StyleSheet,Text, View, TextInput, TouchableOpacity, ScrollView, Button, Image, ActivityIndicator } from 'react-native';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Dimensions,
+  Alert,
+  Animated,
+  ActivityIndicator,
+  Platform,
+  KeyboardAvoidingView,
+  Modal,
+  SafeAreaView,
+} from 'react-native';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { useUser } from '@clerk/clerk-expo';
+import { useConvexFileUpload } from '../../../hooks/useConvexFileUpload';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { useConvexFileUpload } from '../../../hooks/useConvexFileUpload';
-import {RadioButton} from 'react-native-paper'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
+import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { useFonts } from 'expo-font';
 
-type LocationType = {
+const { width, height } = Dimensions.get('window');
+
+const STEPS = [
+  { id: 0, title: 'Photos', icon: 'camera' },
+  { id: 1, title: 'Details', icon: 'car' },
+  { id: 2, title: 'Location & Price', icon: 'location' },
+  { id: 3, title: 'Preview', icon: 'eye' },
+];
+
+const CAR_FEATURES = [
+  'Air Conditioning',
+  'Bluetooth',
+  'Leather Seats',
+  'Parking Sensors',
+  'Backup Camera',
+  'Navigation',
+  'Sunroof',
+  'Child Seats',
+];
+
+interface FormData {
+  carReg: string;
+  carMake: string;
+  carModel: string;
+  carYear: string;
+  rentRange: string;
+  carLocation: string;
+  carDescription: string;
+  postDate: string;
+  features: string[];
+  fuelType: string;
+}
+
+interface Location {
   latitude: number;
   longitude: number;
-};
+  address?: string;
+}
 
-const Page = () => {
-  const [selectedValue, setSelectedValue] = useState('option1');
-  const { generateUploadUrl, uploadFile } = useConvexFileUpload();
-  const createPost = useMutation(api.post.createPost);
-  const [userLocation, setUserLocation] = useState<LocationType | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const convexUser = useQuery(api.users.current);
-  const [image, setImage] = useState<string | null>(null);
+const CarFormStep: React.FC<{ step: number; children: React.ReactNode }> = ({ step, children }) => (
+  <Animated.View style={styles.stepContainer}>
+    <Text style={styles.stepTitle}>
+      <Ionicons name={STEPS[step].icon} size={24} color="#007AFF" /> {STEPS[step].title}
+    </Text>
+    {children}
+  </Animated.View>
+);
 
-  const [formData, setFormData] = useState({
+const ProgressBar: React.FC<{ step: number }> = ({ step }) => (
+  <View style={styles.progressContainer}>
+    {STEPS.map((stepItem, index) => (
+      <View key={stepItem.title} style={styles.progressStep}>
+        <LinearGradient
+          colors={index <= step ? ['#007AFF', '#00C6FF'] : ['#E5E5E5', '#F5F5F5']}
+          style={styles.progressDot}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Ionicons 
+            name={stepItem.icon} 
+            size={16} 
+            color={index <= step ? '#FFF' : '#999'} 
+          />
+        </LinearGradient>
+        <Text style={[
+          styles.progressLabel,
+          index <= step && styles.progressLabelActive,
+        ]}>
+          {stepItem.title}
+        </Text>
+      </View>
+    ))}
+  </View>
+);
+
+export default function ListingPage() {
+  const router = useRouter();
+  const [fontsLoaded] = useFonts({
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
+  });
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<FormData>({
     carReg: '',
     carMake: '',
     carModel: '',
@@ -30,403 +121,823 @@ const Page = () => {
     rentRange: '',
     carLocation: '',
     carDescription: '',
-    carImageUrl: '',
     postDate: new Date().toISOString(),
+    features: [],
+    fuelType: 'petrol',
   });
 
+  const [images, setImages] = useState<string[]>([]);
+  const [imageStorageIds, setImageStorageIds] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [location, setLocation] = useState<Location | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const uploadProgress = useRef(new Animated.Value(0)).current;
+
+  const convexUser = useQuery(api.users.current);
+  const createPost = useMutation(api.post.createPost);
+  const { generateUploadUrl, uploadFile } = useConvexFileUpload();
+
+  useEffect(() => {
+    requestPermissions();
+  }, []);
   useEffect(() => {
     (async () => {
-      const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
-      if (locationStatus !== 'granted') {
-        console.log("Permission to access location was denied");
-        return;
-      }
-
-      const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (mediaStatus !== 'granted') {
-        console.log("Permission to access media library was denied");
-        return;
-      }
-
-      try {
-        const location = await Location.getCurrentPositionAsync({});
-        setUserLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-      } catch (error) {
-        console.error("Error getting location:", error);
-      }
+      await requestPermissions();
+      
+      getCurrentLocation();
     })();
   }, []);
+
+  const requestPermissions = async () => {
+    const locationPermission = await Location.requestForegroundPermissionsAsync();
+    const imagePermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (locationPermission.status !== 'granted' || imagePermission.status !== 'granted') {
+      Alert.alert(
+        'Permissions Required',
+        'Please enable location and image library permissions to use all features.'
+      );
+    }
+  };
+
+  const animateUpload = useCallback(() => {
+    Animated.timing(uploadProgress, {
+      toValue: 1,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start();
+  }, [uploadProgress]);
 
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        aspect: [16, 9],
       });
 
       if (!result.canceled) {
         setIsUploading(true);
-        const imageUri = result.assets[0].uri;
-        setImage(imageUri);
-
-        try {
-          const uploadUrl = await generateUploadUrl();
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          const storageId = await uploadFile(uploadUrl, blob);
-
-          setFormData(prev => ({ ...prev, carImageUrl: storageId }));
-          console.log('Image uploaded successfully');
-        } catch (error) {
-          console.error('Error during upload:', error);
-          alert('Failed to upload image. Please try again.');
-        }
+        animateUpload();
+        const newUris = result.assets.map((asset) => asset.uri);
+        setImages([...images, ...newUris]);
+        
+        const uploads = result.assets.map(async (asset) => {
+          const url = await generateUploadUrl();
+          const blob = await (await fetch(asset.uri)).blob();
+          return uploadFile(url, blob);
+        });
+        
+        const stored = await Promise.all(uploads);
+        setImageStorageIds([...imageStorageIds, ...stored]);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      alert('Failed to select image. Please try again.');
+      Alert.alert('Error', 'Failed to pick images');
     } finally {
       setIsUploading(false);
+      uploadProgress.setValue(0);
     }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Please enable location services');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const address = await reverseGeocode(location.coords);
+      setLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        address,
+      });
+      setFormData({ ...formData, carLocation: address || '' });
+      setShowLocationModal(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get location');
+    }
+  };
+
+  const reverseGeocode = async (coords: { latitude: number; longitude: number }) => {
+    try {
+      const results = await Location.reverseGeocodeAsync(coords);
+      if (results?.[0]) {
+        const { street, city, region } = results[0];
+        return `${street}, ${city}, ${region}`;
+      }
+      return '';
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const validateStep = () => {
+    switch (currentStep) {
+      case 0:
+        if (images.length === 0) {
+          Alert.alert('Error', 'Please add at least one image');
+          return false;
+        }
+        break;
+      case 1:
+        if (!formData.carMake || !formData.carModel || !formData.carYear || !formData.carReg) {
+          Alert.alert('Error', 'Please fill in all car details');
+          return false;
+        }
+        break;
+      case 2:
+        if (!formData.carLocation || !formData.rentRange) {
+          Alert.alert('Error', 'Please fill in location and price');
+          return false;
+        }
+        break;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
     if (!convexUser?._id) {
-      alert('Please sign in to create a post');
-      return;
-    }
-
-    if (!formData.carReg || !formData.carMake || !formData.carModel ||
-      !formData.carYear || !formData.rentRange || !formData.carLocation ||
-      !formData.carDescription || !formData.carImageUrl) {
-      alert('Please fill in all required fields and upload an image');
+      Alert.alert('Error', 'Please sign in first');
       return;
     }
 
     try {
       await createPost({
         posterId: convexUser._id,
-        ...formData
+        ...formData,
+        // fueltype: formData.fuelType,
+        // carImageUrl: imageStorageIds[0],
+        carImageUrl: imageStorageIds,
       });
 
-      setFormData({
-        carReg: '',
-        carMake: '',
-        carModel: '',
-        carYear: '',
-        rentRange: '',
-        carLocation: '',
-        carDescription: '',
-        carImageUrl: '',
-        postDate: new Date().toISOString(),
-      });
-      setImage(null);
-
-      alert('Post created successfully!');
+      Alert.alert(
+        'Success',
+        'Your car has been listed!',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/(tabs)/') }]
+      );
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      Alert.alert('Error', 'Failed to create listing');
     }
   };
 
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Create Car Rental Post</Text>
+  const renderPhotoStep = () => (
+    <View style={styles.imageSection}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {images.map((uri, index) => (
+          <View key={index} style={styles.imgHolder}>
+            <Image source={{ uri }} style={styles.largeImage} />
+            <TouchableOpacity
+              style={styles.removeBtn}
+              onPress={() => {
+                setImages(images.filter((_, i) => i !== index));
+                setImageStorageIds(imageStorageIds.filter((_, i) => i !== index));
+              }}
+            >
+              <Ionicons name="close-circle" size={26} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        {images.length < 5 && (
+          <TouchableOpacity
+            style={styles.addImgBtn}
+            onPress={pickImage}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <ActivityIndicator color="#007AFF" />
+            ) : (
+              <>
+                <Ionicons name="camera" size={32} color="#666" />
+                <Text style={styles.addImgText}>Add Photos</Text>
+                <Text style={styles.addImgSub}>{images.length}/5</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </View>
+  );
 
-        <View
-        style={styles.UserImageContainer}
-        
-        >
-           <Image source={{uri:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJ4AAACUCAMAAABVwGAvAAAANlBMVEX+/v68vb+9vb3f4OG6urq4ubv7+/vz8/P39/fZ2dnDw8Pw8PDd3d3j4+PR0dHLy8vp6em0tLQvYaEnAAAECklEQVR4nO2cW5ezKgxABwxX5TL//89+am17Om0VAgTPWu7XmYe9xIQQYn9+Li4uLi6wSK1mtOzt8Y5Ug7dswwanzuSopgAA/K7HOUCYVG+rDWkYMM4edrPeDFhzhiconRDsI0K47oLSw2e5Fd/ZTtnnK/cJ2/UNnO325Dr7aXsgt/jpXnYyHD27hdArPsz+e7chTB+7UfAUPSbGHnYypLh1W173JRu/A66DXkLU3vUsvV1MfniMQyTXS0oqdwK1nUqL2g3yvWNKynkPJmI9n6dHXLqk7LYv0O68Kj1uVwTty5eekzc92tRicvVoYyN5v71DGxvZerSJOTdwGe22e+ldek9oQ+PkkWsy7YiPa0PurkF73Bhz9WgPkzrPjrqg0pmxQX3UTWtgPKBuZMScgxpj1CdJabNOauRtjJyCFOibVDp9dTl0aEH69BZQjw7fmPz0+vSXB5EWHcTHoAc8sc/Sx+5nTNPrdnXgEqKXuFZ5YTq2m346XqxNsL/AvcLijoO9Be65sjfG8DU9i9DlRuMVadhHQSFOcd+8CFoA/gKc5DL8ho6L4RPrY7eLyM9IHZ0x3nvjxjPOilxcXDxQ0blhB+din2kquaS6w3plxYaB1nFWC/BtNunj/ma9o6pKtbEcDgqpN9adhMAthl9Yd9gsu3Vo7pdPjUuYmN1UfkEw024vltFmdh3fAWglqPxuZZwIB9uihJYDz2vpfdObCdWjWH+v2fMRrPIDHA8H9TKpeoHqfqss7H8QFef6pvw8dwhU88u9mU9DsDo5empixyr1/VwjOVblFjX3eioHKI7f9BlHFKX5z1TOd38pC19dO9/9ofCeN3PQDEFJ9KrGbqxssu+4OVtMwVVq47BdAfzqZt95Y/TwB6SWKfmhh4/d3CFClB5+wsW3t5uLe7Re2akxUQ+woStbp+SbHrbsGxvvt5setizInLbA6mFDt3W1sulhi77dL+TqgdzW0j6kKgd5ZNNZkzQF4HZdRaWHyyyJowLl4IqC2LxSvoEc9yfTw+XlgUoPV89nThDi9XDbRvtT2qaH2zao9JCtSDI9XL186V165eBCI/MzSDTIvOeo9AaU3slLArKCClfvURXz2BYa0UkNe5DUFIsL+AZfpNAraH639xO+ZMRFNQ0PDqXT/rLZhR9b3rvyueGxXf/bVrkydTXnCB7Um2mRMfDbaG0ds2U0t+44hroN/1bSA+5rjyvp6AGqrLKwU5tJoOgDyxiM+6TGrGk456XHwVsh7kPeSUq3/5zfNwFhiO0nDbXzwS5DfGk5m6+D4DaYkW4IUo5xMsHOay12lnv94yw2RUK1p6PUanSDD/PD/HtHMz+uZUI9Ki1PMaM+u66/rrj8wOJJlC4uLi7+d/wDi2c2oMA/dZIAAAAASUVORK5CYII="}} style={styles.UserImage}/>
-            
-            
+  const renderDetailsStep = () => (
+    <View style={styles.formSection}>
+      <View style={styles.row}>
+        <View style={styles.halfInput}>
+          <Text style={styles.label}>Make</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Toyota"
+            value={formData.carMake}
+            onChangeText={(text) => setFormData({ ...formData, carMake: text })}
+          />
         </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Car Registration Number *"
-          value={formData.carReg}
-          onChangeText={(text) => setFormData({ ...formData, carReg: text })}
-        />
+        <View style={styles.halfInput}>
+          <Text style={styles.label}>Model</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Camry"
+            value={formData.carModel}
+            onChangeText={(text) => setFormData({ ...formData, carModel: text })}
+          />
+        </View>
+      </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Car Make *"
-          value={formData.carMake}
-          onChangeText={(text) => setFormData({ ...formData, carMake: text })}
-        />
+      <View style={styles.row}>
+        <View style={styles.halfInput}>
+          <Text style={styles.label}>Year</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="2023"
+            keyboardType="numeric"
+            value={formData.carYear}
+            onChangeText={(text) => setFormData({ ...formData, carYear: text })}
+          />
+        </View>
+        <View style={styles.halfInput}>
+          <Text style={styles.label}>Registration</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="ABC123"
+            value={formData.carReg}
+            onChangeText={(text) => setFormData({ ...formData, carReg: text })}
+          />
+        </View>
+      </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Car Model *"
-          value={formData.carModel}
-          onChangeText={(text) => setFormData({ ...formData, carModel: text })}
-        />
+      <Text style={styles.label}>Features</Text>
+      <View style={styles.featuresList}>
+        {CAR_FEATURES.map((feature) => (
+          <TouchableOpacity
+            key={feature}
+            style={[
+              styles.featureTag,
+              formData.features.includes(feature) && styles.featureTagActive,
+            ]}
+            onPress={() => {
+              setFormData({
+                ...formData,
+                features: formData.features.includes(feature)
+                  ? formData.features.filter(f => f !== feature)
+                  : [...formData.features, feature],
+              });
+            }}
+          >
+            <Text style={[
+              styles.featureTagText,
+              formData.features.includes(feature) && styles.featureTagTextActive,
+            ]}>
+              {feature}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
 
+  const renderLocationStep = () => (
+    <View style={styles.formSection}>
+      <Text style={styles.label}>Daily Rate (KES)</Text>
+      <TextInput
+        style={[styles.input, styles.rateInput]}
+        placeholder="1000"
+        keyboardType="numeric"
+        value={formData.rentRange}
+        onChangeText={(text) => setFormData({ ...formData, rentRange: text })}
+      />
+  
+      <Text style={styles.label}>Location</Text>
+      <View style={styles.locationContainer}>
         <TextInput
-          style={styles.input}
-          placeholder="Car Year *"
-          keyboardType="numeric"
-          value={formData.carYear}
-          onChangeText={(text) => setFormData({ ...formData, carYear: text })}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Rate * (e.g. $50-100 per day)"
-          value={formData.rentRange}
-          onChangeText={(text) => setFormData({ ...formData, rentRange: text })}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Location *"
+          style={[styles.input, styles.locationInput]}
+          placeholder="Enter location"
           value={formData.carLocation}
           onChangeText={(text) => setFormData({ ...formData, carLocation: text })}
         />
-
-        <View>
-          <Text style={styles.text}>Choose Fuel Type:</Text>
-          <View style={styles.fuelTypes}>
-              <View style={styles.radioBtn}>
-                <RadioButton
-                value="option1"
-                status={selectedValue==="option1"?
-                  'checked':'unchecked'
-                }
-                onPress={()=> setSelectedValue('option1')}
-                color='#007BFF'
-                />
-                <Text>Petrol</Text>
-              </View>
-              <View style={styles.radioBtn}>
-                <RadioButton
-                value="option1"
-                status={selectedValue==="option2"?
-                  'checked':'unchecked'
-                }
-                onPress={()=> setSelectedValue('option2')}
-                color='#007BFF'
-                />
-                <Text>Diesel</Text>
-              </View>
-              <View style={styles.radioBtn}>
-                <RadioButton
-                value="option3"
-                status={selectedValue==="option3"?
-                  'checked':'unchecked'
-                }
-                onPress={()=> setSelectedValue('option3')}
-                color='#007BFF'
-                />
-                <Text>Electric</Text>
-              </View>
-              <View style={styles.radioBtn}>
-                <RadioButton
-                value="option4"
-                status={selectedValue==="option4"?
-                  'checked':'unchecked'
-                }
-                onPress={()=> setSelectedValue('option4')}
-                color='#007BFF'
-                />
-                <Text style={styles.text}>Hybrid</Text>
-              </View>
-
-              
-          </View>
-        </View>
-
-        
-
-        {/* <View style={styles.ColorPicker}>
-            <TextInput placeholder="Please select a color" style={styles.input}></TextInput>
-        </View> */}
-
-        <View>
-          <TextInput 
-          multiline={true}
-          numberOfLines={5}
-          placeholder='Add additional information about the car such e.g common issues*' style={styles.input}></TextInput>
-        </View>
-
-        <View style={styles.imageUploadContainer}>
-            <Text style={styles.label}>Upload Car Image:</Text>
-            <TouchableOpacity 
-              style={[styles.imageUploadButton, isUploading && styles.buttonDisabled]} 
-              onPress={pickImage} 
-              disabled={isUploading}
-            >
-              <Text style={styles.imageUploadButtonText}>
-                {isUploading ? "Uploading..." : "Select Image"}
-              </Text>
-            </TouchableOpacity>
-                  
-            {isUploading && <ActivityIndicator size="large" color="#007BFF" style={styles.loadingIndicator} />}
-                  
-            {image && (
-              <Image source={{ uri: image }} style={styles.imagePreview} />
-              )}
-      
-      </View >
-        <TouchableOpacity 
-          style={[styles.submitBtn, isUploading && styles.buttonDisabled]} 
-          onPress={handleSubmit}
-          disabled={isUploading}
+        <TouchableOpacity
+          style={styles.getCurrentLocationBtn}
+          onPress={getCurrentLocation}
         >
-          <Text style={styles.buttonText}>Submit</Text>
+          <Ionicons name="location" size={20} color="#007AFF" />
         </TouchableOpacity>
       </View>
-    </ScrollView>
+  
+      <Text style={styles.label}>Description</Text>
+      <TextInput
+        style={styles.descInput}
+        placeholder="Tell renters about your car..."
+        multiline
+        numberOfLines={4}
+        value={formData.carDescription}
+        onChangeText={(text) => setFormData({ ...formData, carDescription: text })}
+      />
+    </View>
   );
-};
+
+  const renderPreview = () => (
+    <View style={styles.previewContainer}>
+      <LinearGradient
+        colors={['#FFF', '#F8F9FA']}
+        style={styles.previewCard}
+      >
+        <Image
+          source={{ uri: images[0] }}
+          style={styles.previewImage}
+        />
+        <View style={styles.previewContent}>
+          <Text style={styles.previewTitle}>
+            {formData.carYear} {formData.carMake} {formData.carModel}
+          </Text>
+          <Text style={styles.previewPrice}>KES {formData.rentRange}/day</Text>
+          <Text style={styles.previewLocation}>
+            <Ionicons name="location" size={16} color="#666" />
+            {' '}{formData.carLocation}
+          </Text>
+          <Text style={styles.previewDescription} numberOfLines={3}>
+            {formData.carDescription}
+          </Text>
+          <View style={styles.previewFeatures}>
+          {formData.features.map((feature) => (
+              <View key={feature} style={styles.previewFeatureTag}>
+                <Text style={styles.previewFeatureText}>{feature}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return <CarFormStep step={0}>{renderPhotoStep()}</CarFormStep>;
+      case 1:
+        return <CarFormStep step={1}>{renderDetailsStep()}</CarFormStep>;
+      case 2:
+        return <CarFormStep step={2}>{renderLocationStep()}</CarFormStep>;
+      case 3:
+        return <CarFormStep step={3}>{renderPreview()}</CarFormStep>;
+      default:
+        return null;
+    }
+  };
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" color="#007AFF" />;
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
+      <ProgressBar step={currentStep} />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderStep()}
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <BlurView intensity={95} style={styles.buttonContainer}>
+        {currentStep > 0 && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentStep(currentStep - 1)}
+          >
+            <Ionicons name="arrow-back" size={20} color="#666" />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={() => {
+            if (validateStep()) {
+              if (currentStep === STEPS.length - 1) {
+                handleSubmit();
+              } else {
+                setCurrentStep(currentStep + 1);
+              }
+            }
+          }}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentStep === STEPS.length - 1 ? 'List Your Car' : 'Continue'}
+          </Text>
+          <Ionicons 
+            name={currentStep === STEPS.length - 1 ? 'checkmark' : 'arrow-forward'} 
+            size={20} 
+            color="#FFF" 
+          />
+        </TouchableOpacity>
+      </BlurView>
+
+      <Modal
+        visible={showLocationModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowLocationModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Location</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={getCurrentLocation}
+            >
+              <Text style={styles.modalButtonText}>Use Current Location</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalSecondaryButton]}
+              onPress={() => setShowLocationModal(false)}
+            >
+              <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1,
-    padding: 20,
-    backgroundColor: '#f4f4f4',
-    marginBottom:10,
-    borderRadius:20
-    },
-
-  card: { backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3, },
-    
-
-  title: { 
-    
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center' },
-
-  input: { 
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8, 
-    padding: 12,
-    marginBottom: 10, 
-    fontSize: 16 
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
   },
-
-  image: { 
-    width: 180,
-    height: 180, 
-    borderRadius: 10, 
-    marginTop: 10 
+  keyboardView: {
+    flex: 1,
   },
-
-  button: { backgroundColor: '#007AFF',
-     padding: 15, 
-     borderRadius: 8, 
-     alignItems: 'center', 
-     marginTop: 10 
+  scrollContent: {
+    paddingBottom: 100,
   },
-
-  buttonDisabled: {
-    backgroundColor: '#cccccc' 
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
   },
-
-  buttonText: {
-     color: '#fff', 
-     fontSize: 16, 
-     fontWeight: 'bold' 
-  },
-
-  UserImageContainer:{
-     width:"100%",
-     alignItems:"center",
-     paddingBottom:25
-  },
-
-  UserImage:{
-    borderRadius:30,
-    width:50,
-    height:50,
-    backgroundColor:"lightgray",
-    borderWidth:2,
-    borderStyle:'solid',
-    borderColor:"black"
-  },
-
-  imageSection:{
-    width:"100%",
-    flexDirection:'row'
-  },
-
-  imageBtn:{
-    width: "100%",
-  },
-
-  submitBtn:{
-    width:"100%",
-    borderRadius:40,
-    height:'auto',
-    backgroundColor:"black",
-    alignItems:'center',
-    padding:15,
-    marginTop:15,
-    marginBottom:15
-
-  },
-
-  fuelTypes:{
-    flexDirection:'row'
-  },
-  radioBtn:{
-    flexDirection:'row',
-    alignItems:'center'
-  },
-  text:{
-    marginLeft: 0,
-    fontSize: 16,
-    color: '#333',
-  },
-  imageUploadContainer: {
-    marginTop: 15,
+  progressStep: {
     alignItems: 'center',
+  },
+  progressDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 12,
+    fontFamily: 'DMSans_500Medium',
+    color: '#999',
+  },
+  progressLabelActive: {
+    color: '#007AFF',
+    fontFamily: 'DMSans_700Bold',
+  },
+  stepContainer: {
+    padding: 20,
+  },
+  stepTitle: {
+    fontSize: 28,
+    fontFamily: 'DMSans_700Bold',
+    marginBottom: 24,
+    color: '#1A1A1A',
+  },
+  imageSection: {
+    marginHorizontal: -20,
+    paddingLeft: 20,
+  },
+  imgHolder: {
+    width: width * 0.8,
+    height: 240,
+    marginRight: 15,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  largeImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 6,
+  },
+  addImgBtn: {
+    width: width * 0.8,
+    height: 240,
+    borderRadius: 16,
+    borderColor: '#E9ECEF',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF',
+    marginRight: 15,
+  },
+  addImgText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontFamily: 'DMSans_500Medium',
+    color: '#666',
+  },
+  addImgSub: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#999',
+    marginTop: 4,
+  },
+  formSection: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  halfInput: {
+    width: '48%',
   },
   label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 14,
+    fontFamily: 'DMSans_600Medium',
+    color: '#666',
+    marginBottom: 8,
   },
-  imageUploadButton: {
-    backgroundColor: '#007BFF',
+  input: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    width:"100%",
-    borderRadius:40
-  },
-  imageUploadButtonText: {
-    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'DMSans_400Regular',
   },
-  
-  loadingIndicator: {
-    marginTop: 10,
+  inputFocused: {
+    borderColor: '#007AFF',
+    backgroundColor: '#FFF',
   },
-  imagePreview: {
-    width: 180,
-    height: 180,
-    borderRadius: 10,
-    marginTop: 15,
-    borderWidth: 2,
-    borderColor: '#ddd',
+  rateInput: {
+    fontSize: 24,
+    textAlign: 'center',
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
+  },
+  locInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  locText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    fontFamily: 'DMSans_400Regular',
+  },
+  descInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    padding: 16,
+    fontSize: 16,
+    fontFamily: 'DMSans_400Regular',
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  previewContainer: {
+    padding: 20,
+  },
+  previewCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  previewImage: {
+    width: '100%',
+    height: 240,
+    resizeMode: 'cover',
+  },
+  previewContent: {
+    padding: 20,
+  },
+  previewTitle: {
+    fontSize: 24,
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  previewPrice: {
+    fontSize: 20,
+    fontFamily: 'DMSans_700Bold',
+    color: '#007AFF',
+    marginBottom: 12,
+  },
+  previewLocation: {
+    fontSize: 16,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  previewDescription: {
+    fontSize: 16,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+    lineHeight: 24,
+  },
+  previewFeatures: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 16,
+  },
+  previewFeatureTag: {
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 8,
+    marginTop: 8,
+  },
+  previewFeatureText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+  },
+  backButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginRight: 8,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontFamily: 'DMSans_600Medium',
+    color: '#666',
+  },
+  nextButton: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginLeft: 8,
+  },
+  nextButtonText: {
+    marginRight: 8,
+    fontSize: 16,
+    fontFamily: 'DMSans_600Medium',
+    color: '#FFF',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
+    marginBottom: 16,
+  },
+  modalButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: 'DMSans_600Medium',
+  },
+  modalSecondaryButton: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  modalSecondaryButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontFamily: 'DMSans_600Medium',
+  },
+  featureTagActive: {
+    backgroundColor: '#007AFF',
+  },
+  featureTagTextActive: {
+    color: '#FFF',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    marginTop: 4,
+  },
+  successText: {
+    color: '#34C759',
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    marginTop: 4,
+  },
+  featuresList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  featureTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    margin: 4,
+  },
+  featureTagText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  locationInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  getCurrentLocationBtn: {
+    padding: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
 });
-
-export default Page;
