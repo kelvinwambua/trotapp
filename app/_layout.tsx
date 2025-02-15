@@ -5,6 +5,7 @@ import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@
 import { useEffect } from "react";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
@@ -54,7 +55,10 @@ export default function RootLayout() {
     <ClerkProvider publishableKey={clerkPublishableKey!} tokenCache={tokenCache}>
       <ClerkLoaded>
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          <InitialLayouty />
+          <SafeAreaProvider>
+            <InitialLayouty />
+          </SafeAreaProvider>
+ 
         </ConvexProviderWithClerk>
       </ClerkLoaded>
     </ClerkProvider>
