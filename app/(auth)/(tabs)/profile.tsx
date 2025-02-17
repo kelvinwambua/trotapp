@@ -1,15 +1,15 @@
 import React from 'react';
-import { ScrollView,View, Text, StyleSheet, Button, Alert,TouchableOpacity, Settings } from 'react-native';
+import { ScrollView,View, Text, StyleSheet, Button, Alert,TouchableOpacity, Settings, Image } from 'react-native';
 import { useUser, useAuth }  from '@clerk/clerk-expo';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 
 
 
+
 export default function ProfileScreen() {
   const { signOut } = useAuth();
-  const { isLoaded, isSignedIn, user } = useUser()
-  
+  const { isLoaded, isSignedIn, user } = useUser() 
   if (!isLoaded || !isSignedIn) {
     return (
     <View style={styles.container}>
@@ -53,18 +53,18 @@ export default function ProfileScreen() {
 
 
     <View style={styles.userDetail}>
-          <Text style={{fontSize:30,fontWeight:'bold'}}>{user.firstName} {user.lastName}</Text>
-          <Text style={{fontSize:15}}>smusangi54@gmail.com</Text>
+          <Text style={{fontSize:30,fontWeight:'bold',fontFamily:'DMSans_700Bold'}}>{user.firstName} {user.lastName}</Text>
+          <Text style={{fontSize:15,fontFamily:'DMSans_700Bold'}}>smusangi54@gmail.com</Text>
           <View style={{flexDirection:'row',alignItems:'center'}}>
             <View style={{padding:5}}>
-              <MaterialIcons style={styles.accountIcon} size={100} name='account-circle'></MaterialIcons>
+            <MaterialIcons name='account-circle' size={100} style={styles.accountIcon}></MaterialIcons>
               <TouchableOpacity>
                 <View
                 style={{
                   position:'absolute',
                   bottom:0,
-                  right:20,
                   // top:1,
+                  right:10,
                   zIndex:9999
                 }}
                 >
@@ -76,7 +76,7 @@ export default function ProfileScreen() {
 
           <View style={styles.editProfile}>
             <MaterialIcons color={'#505152'} name='edit'  size={25}></MaterialIcons>
-            <Text style={{color:'#505152'}}>Edit Profile</Text>
+            <Text style={{color:'#505152',fontFamily:'DMSans_700Bold'}}>Edit Profile</Text>
           </View>
         </TouchableOpacity>
           </View>
@@ -84,13 +84,13 @@ export default function ProfileScreen() {
 
 
           <View style={styles.ratingContainer}>
-                <Text style={{color:'white',fontSize:15}}>Rating: 4.5 (20)</Text>
+                <Text style={{color:'white',fontSize:15,fontFamily:'DMSans_700Bold'}}>Rating: 4.5 (20)</Text>
                 <MaterialIcons name='star-rate' size={22} color={'yellow'}></MaterialIcons>
           </View>
 
           <View style={styles.rentContainer}>
-                <Text style={{color:'white',fontSize:15}}>Cars rented: 15</Text>
-                <Text style={{color:'white',fontSize:15,borderLeftWidth:1,borderColor:'white',}}> Cars rented out: 6</Text>
+                <Text style={{color:'white',fontSize:15,fontFamily:'DMSans_700Bold'}}>Cars rented: 15</Text>
+                <Text style={{color:'white',fontFamily:'DMSans_700Bold',fontSize:15,borderLeftWidth:1,borderColor:'white',}}> Cars rented out: 6</Text>
           </View>
     </View>
 
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
           <View style={styles.setting}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={styles.icons} color={'grey'} name='bookmark' size={30}></MaterialIcons>
-              <Text>Bookmarked cars</Text>
+              <Text style={{fontFamily:'DMSans_700Bold'}}>Bookmarked cars</Text>
             </View>
             <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons>
           </View>
@@ -112,7 +112,7 @@ export default function ProfileScreen() {
           <View style={styles.setting}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={styles.icons} color={'grey'} name='alarm' size={30}></MaterialIcons>
-              <Text>Bookings</Text>
+              <Text style={{fontFamily:'DMSans_700Bold'}}>Bookings</Text>
             </View>
             <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons>
           </View>
@@ -122,7 +122,7 @@ export default function ProfileScreen() {
           <View style={styles.setting}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={styles.icons} color={'grey'} name='settings' size={30}></MaterialIcons>
-              <Text>Settings</Text>
+              <Text style={{fontFamily:'DMSans_700Bold'}}>Settings</Text>
             </View>
             <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons>
           </View>
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
           <View style={styles.setting}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={styles.icons} color={'grey'} name='label-important' size={30}></MaterialIcons>
-              <Text>Verify ID</Text>
+              <Text style={{fontFamily:'DMSans_700Bold'}}>Verify ID</Text>
             </View>
             <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons>
           </View>
@@ -142,7 +142,7 @@ export default function ProfileScreen() {
           <View style={styles.setting}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={styles.icons} color={'grey'}  name='headphones' size={30}></MaterialIcons>
-              <Text>Help support</Text>
+              <Text style={{fontFamily:'DMSans_700Bold'}}>Help support</Text>
             </View>
             <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons>
           </View>
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
           <View style={styles.setting}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={styles.icons} color={'grey'} name='supervised-user-circle' size={30}></MaterialIcons>
-              <Text>Invite friends</Text>
+              <Text style={{fontFamily:'DMSans_700Bold'}}>Invite friends</Text>
             </View>
             <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons>
           </View>
@@ -162,7 +162,7 @@ export default function ProfileScreen() {
           <View style={[styles.setting,styles.logout]}>
             <View style={{flexDirection:'row',alignItems:'center'}}>
               <MaterialIcons style={[styles.icons, {color:'red'}]} color={'grey'} name='logout' size={30}></MaterialIcons>
-              <Text style={{color:'red'}}>Log out</Text>
+              <Text style={{color:'red',fontFamily:'DMSans_700Bold'}}>Log out</Text>
             </View>
             {/* <MaterialIcons color={'grey'} name='arrow-right' size={40}></MaterialIcons> */}
           </View>
@@ -210,8 +210,12 @@ const styles = StyleSheet.create({
     backgroundColor:'#65b8e6',
     borderBottomLeftRadius:20,
     borderBottomRightRadius:20,
-    padding:20
+    padding:20,
+    fontFamily:'DMSans_700Bold'
 
+  },
+  accountIcon:{
+    position:'relative'
   },
   rentContainer:{
     flexDirection:'row',
@@ -237,16 +241,13 @@ const styles = StyleSheet.create({
       padding:10,
       margin:10
       // color:'white'
-  }
-  ,
-  accountIcon:{
-    position:'relative'
   },
   userImage:{
 
   },
   emailName:{
-    justifyContent:'center'
+    justifyContent:'center',
+    fontFamily:'DMSans_700Bold'
   },
   editProfile:{
       justifyContent:'center',
