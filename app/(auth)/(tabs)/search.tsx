@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 
 const carImages = [
   'https://source.unsplash.com/random/300x200?car',
@@ -17,10 +19,10 @@ const placeholderImages = [
 ];
 
 const carData = [
-  { id: 1, name: 'Tesla Model S', type: 'Electric', brand: 'Tesla', price: '100k+', capacity: '5', fuel: 'Electric', image: 'https://source.unsplash.com/featured/?tesla' },
-  { id: 2, name: 'BMW M3', type: 'Sports', brand: 'BMW', price: '30k-50k', capacity: '4', fuel: 'Petrol', image: 'https://source.unsplash.com/featured/?bmw' },
-  { id: 3, name: 'Ford Mustang', type: 'Sports', brand: 'Ford', price: '30k-50k', capacity: '4', fuel: 'Petrol', image: 'https://source.unsplash.com/featured/?mustang' },
-  { id: 4, name: 'Toyota Corolla', type: 'Sedan', brand: 'Toyota', price: '10k-30k', capacity: '5', fuel: 'Petrol', image: 'https://source.unsplash.com/featured/?toyota' },
+  { id: 1, name: 'Tesla Model S', type: 'Electric', brand: 'Tesla', price: '100k+', capacity: '5', fuel: 'Electric', image: 'https://source.unsplash.com/featured/?tesla',reviews:'4.7 (16)' },
+  { id: 2, name: 'BMW M3', type: 'Sports', brand: 'BMW', price: '30k-50k', capacity: '4', fuel: 'Petrol', image: 'https://source.unsplash.com/featured/?bmw',reviews:'5.0 (11)' },
+  { id: 3, name: 'Ford Mustang', type: 'Sports', brand: 'Ford', price: '30k-50k', capacity: '4', fuel: 'Petrol', image: 'https://source.unsplash.com/featured/?mustang',reviews:'2.5 (20)' },
+  { id: 4, name: 'Toyota Corolla', type: 'Sedan', brand: 'Toyota', price: '10k-30k', capacity: '5', fuel: 'Petrol', image: 'https://source.unsplash.com/featured/?toyota',reviews:'2.6 (32)' },
 
 ];
 
@@ -81,20 +83,35 @@ export default function SearchScreen() {
         </TouchableOpacity>
       </View>
 
-      <TextInput
+      {/* <TextInput
         placeholder="Location"
         style={styles.input}
         placeholderTextColor="#999"
-      />
+      /> */}
 
-      <Text style={styles.infoText}>100+ cars readily available for you today!!!</Text>
 
-      <TouchableOpacity 
-        style={styles.exploreButton} 
-        onPress={() => setFilterModalVisible(true)}
-      >
-        <Text style={styles.exploreText}>Search</Text>
+      <View style={discover.discoverContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <Image style={discover.images} source={require('@/assets/images/car.jpg')}></Image>
+              <Image style={discover.images} source={require('@/assets/images/car2.jpg')}></Image>
+              <Image style={discover.images} source={require('@/assets/images/bg.png')}></Image>
+              <Image style={discover.images} source={require('@/assets/images/car.jpg')}></Image>
+              <Image style={discover.images} source={require('@/assets/images/car.jpg')}></Image>
+              <Image style={discover.images} source={require('@/assets/images/car.jpg')}></Image>
+
+
+          </ScrollView>
+
+          <Text style={styles.infoText}>100+ cars readily available for you today!!!</Text>
+
+        <TouchableOpacity 
+          style={styles.exploreButton} 
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <Text style={styles.exploreText}>Search</Text>
       </TouchableOpacity>
+      </View>
+      
 
       
       <Modal
@@ -119,7 +136,7 @@ export default function SearchScreen() {
 
             
             <Text style={styles.filterLabel}>Car Type</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
               {carTypes.map((type) => (
                 <TouchableOpacity 
                   key={type} 
@@ -136,7 +153,7 @@ export default function SearchScreen() {
 
             
             <Text style={styles.filterLabel}>Brand</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
               {carBrands.map((brand) => (
                 <TouchableOpacity 
                   key={brand} 
@@ -153,7 +170,7 @@ export default function SearchScreen() {
 
             
             <Text style={styles.filterLabel}>Price Range</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
               {priceRanges.map((price) => (
                 <TouchableOpacity 
                   key={price} 
@@ -170,7 +187,7 @@ export default function SearchScreen() {
 
             
             <Text style={styles.filterLabel}>Sitting Capacity</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
               {sittingCapacities.map((capacity) => (
                 <TouchableOpacity 
                   key={capacity} 
@@ -187,7 +204,7 @@ export default function SearchScreen() {
 
             
             <Text style={styles.filterLabel}>Fuel Type</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
               {fuelTypes.map((fuel) => (
                 <TouchableOpacity 
                   key={fuel} 
@@ -224,12 +241,19 @@ export default function SearchScreen() {
         {filteredCars.length > 0 ? (
           filteredCars.map(car => (
             <View key={car.id} style={styles.resultItem}>
-              <Image source={{ uri: car.image }} style={styles.carImage} />
+              {/* <Image source={{ uri: car.image }} style={styles.carImage} /> */}
+              <Image source={require('@/assets/images/bg.png')} style={styles.carImage} />
+
               <View>
                 <Text style={styles.carName}>{car.name}</Text>
                 <Text style={styles.carDetails}>{car.brand} - {car.type}</Text>
                 <Text style={styles.carDetails}>{car.capacity} Seater - {car.fuel}</Text>
                 <Text style={styles.carDetails}>Price: {car.price}</Text>
+                <View style={styles.ratingContainer}>
+                      <Text style={styles.reviewText}>Reviews: {car.reviews}</Text>
+                      <MaterialIcons name='star' color={'yellow'} size={20}></MaterialIcons>
+                      
+                </View>
               </View>
             </View>
           ))
@@ -272,6 +296,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 20,
+    fontFamily:'DMSans_700Bold',
+
   },
   exploreButton: {
     backgroundColor: '#007AFF',
@@ -328,10 +354,13 @@ const styles = StyleSheet.create({
     borderRadius: 24, 
     marginHorizontal: 5,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.9,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 3,
     elevation: 4,
+    width:150,
+    justifyContent:'center',
+    alignItems:'center'
   },
   selectedFilterButton: {
     backgroundColor: '#007AFF',
@@ -376,7 +405,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     justifyContent: 'center',
-    height: 80,
+    height:104 ,
   },
   resultsContainer:{
     marginTop:20,
@@ -400,7 +429,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    height: 104,
+    height: 130,
   },
   selectedResult: {
     borderWidth: 2,
@@ -417,6 +446,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 4,
   },
+  ratingContainer:{
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  reviewText:{
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 4,
+    fontWeight: 'bold',
+  },
+
 
 
 });
+
+const discover=StyleSheet.create({
+  discoverContainer:{
+      width:'100%',
+      height:'auto',
+      backgroundColor:'white',
+      borderRadius:10,
+      borderWidth:1,
+      borderColor:'#ccc9c2',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      padding:8
+      
+  },
+  images:{
+    height:80,
+    width:80,
+    borderRadius:15,
+    margin:5
+  }
+})
