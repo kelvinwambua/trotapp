@@ -17,7 +17,7 @@ const CarsScreen = () => {
   });
 
   const userCars = useQuery(api.post.getUserCars, { 
-    userId: user?.id 
+    userId: user?.id || "" 
   });
 
   if (!fontsLoaded || !userCars) {
