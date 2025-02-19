@@ -14,28 +14,7 @@ export const getAllUsers= query({
   },
 });
 
-export const getUserByClerkId = query({
-  args: {
-    clerkId: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query('users')
-      .filter((q) => q.eq(q.field('clerkId'), args.clerkId))
-      .unique();
 
-    if (!user?.imageUrl || user.imageUrl.startsWith('http')) {
-      return user;
-    }
-
-    const url = await ctx.storage.getUrl(user.imageUrl as Id<'_storage'>);
-
-    return {
-      ...user,
-      imageUrl: url,
-    };
-  },
-});
 
 export const getUserById = query({
   args: {
@@ -60,8 +39,8 @@ export const createUser = internalMutation({
   args: {
     clerkId: v.string(),
     email: v.string(),
-    first_name: v.optional(v.union(v.string(),v.null())),
-    last_name: v.optional(v.union(v.string(),v.null())),
+    first_name: v.optional(v.union(v.string(), v.null())),
+    last_name: v.optional(v.union(v.string(), v.null())),
     imageUrl: v.optional(v.string()),
     username: v.union(v.string(), v.null()),
     bio: v.optional(v.string()),
@@ -70,12 +49,27 @@ export const createUser = internalMutation({
     MoneySpent: v.number(),
     RentCount: v.number(),
     RenteeCount: v.number(),
+    // Added required fields
+    createdAt: v.optional(v.string()), // Made optional for backward compatibility
+    lastActive: v.optional(v.string()), // Made optional for backward compatibility
+    // Added optional fields
+    rating: v.optional(v.number()),
+    verificationStatus: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
+    location: v.optional(v.string()),
+    preferences: v.optional(v.array(v.string())),
+    notifications: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const now = new Date().toISOString();
+    
     const userId = await ctx.db.insert('users', {
       ...args,
-      username: args.username || `${args.first_name}${args.last_name}`,
+      username: args.username || `${args.first_name || ''}${args.last_name || ''}`,
+      createdAt: args.createdAt || now,
+      lastActive: args.lastActive || now,
     });
+    
     return userId;
   },
 });

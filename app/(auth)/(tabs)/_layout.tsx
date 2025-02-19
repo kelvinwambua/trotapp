@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { StyleSheet, TouchableOpacity, Text, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, Text, View, Image } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -12,6 +12,10 @@ const CreateTabIcon = ({ color, size }: { color: string; size: number }) => (
     <Ionicons name="add" size={size} color={color} />
   </View>
 );
+const colors = {
+  primary: '#4dabfe',    
+
+};
 
 const Layout = () => {
   const { signOut } = useAuth();
@@ -71,15 +75,36 @@ const Layout = () => {
           ),
         }}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
-          ),
-        }}
-      />
+            <Tabs.Screen 
+                name="(profile)"
+                
+                options={{
+                    title: 'Profile',
+                    headerShown: false,
+                    
+                    tabBarIcon: ({ focused }) => (
+                        <View style={{        
+                            width: 40,
+                            height: 40,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: 12, 
+                            backgroundColor: focused ? `${colors.primary}15` : 'transparent' 
+                        }}>
+                            <Image 
+                                source={{ uri: user?.imageUrl||`https://robohash.org/${user?.firstName}` }} 
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 14,
+                                    borderWidth: focused ? 2 : 0,
+                                    borderColor: colors.primary,
+                                }}
+                            />
+                        </View>
+                    )
+                }}
+            />
     </Tabs>
   );
 };

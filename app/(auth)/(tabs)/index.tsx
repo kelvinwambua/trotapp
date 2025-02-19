@@ -10,7 +10,7 @@ import BottomSheet from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import CarBottomSheet from './components/CarSuggestion';
+import CarBottomSheet from '../../../components/CarSuggestion';
 
 const MAPBOX_ACCESS_TOKEN = "sk.eyJ1Ijoia2Vsdmlud2FtYnVhc3llbmdvIiwiYSI6ImNtMzVyZW1pNjA3MXAyaXF5eDA4NnFnZTkifQ.M9kqRHZYlL4HMo_bWPbZNA";
 Mapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
@@ -178,7 +178,7 @@ const Page = () => {
                 const processedCar = {
                     id: post._id,
                     name: `${post.carMake} ${post.carModel} ${post.carYear}`,
-                    price: `KES ${post.rentRange}/day`,
+                    price: ` ${post.rentRange}`,
                     image: post.carImageUrls?.[0],
                     type: post.carMake,
                     distance: `${distance.toFixed(1)} km`,

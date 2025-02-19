@@ -15,6 +15,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   SafeAreaView,
+  Switch,
 } from 'react-native';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -35,7 +36,8 @@ const STEPS = [
   { id: 0, title: 'Photos', icon: 'camera' },
   { id: 1, title: 'Details', icon: 'car' },
   { id: 2, title: 'Location & Price', icon: 'location' },
-  { id: 3, title: 'Preview', icon: 'eye' },
+  { id: 3, title: 'Additional Info', icon: 'options' },
+  { id: 4, title: 'Preview', icon: 'eye' },
 ];
 
 const CAR_FEATURES = [
@@ -49,6 +51,9 @@ const CAR_FEATURES = [
   'Child Seats',
 ];
 
+const FUEL_TYPES = ['Petrol', 'Diesel', 'Hybrid', 'Electric'];
+const TRANSMISSION_TYPES = ['Automatic', 'Manual'];
+
 interface FormData {
   carReg: string;
   carMake: string;
@@ -60,6 +65,13 @@ interface FormData {
   postDate: string;
   features: string[];
   fuelType: string;
+  transmission: string;
+  price: number;
+  mileage: number;
+  insurance: string;
+  availability: string[];
+  rules: string[];
+  deposit: number;
 }
 
 interface Location {
@@ -123,7 +135,14 @@ export default function ListingPage() {
     carDescription: '',
     postDate: new Date().toISOString(),
     features: [],
-    fuelType: 'petrol',
+    fuelType: 'Petrol',
+    transmission: 'Automatic',
+    price: 0,
+    mileage: 0,
+    insurance: 'Standard',
+    availability: [],
+    rules: ['No smoking', 'No pets'],
+    deposit: 0,
   });
 
   const [images, setImages] = useState<string[]>([]);
@@ -132,6 +151,7 @@ export default function ListingPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const uploadProgress = useRef(new Animated.Value(0)).current;
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   const convexUser = useQuery(api.users.current);
   const createPost = useMutation(api.post.createPost);
@@ -250,8 +270,14 @@ export default function ListingPage() {
         }
         break;
       case 2:
-        if (!formData.carLocation || !formData.rentRange) {
+        if (!formData.carLocation || !formData.price) {
           Alert.alert('Error', 'Please fill in location and price');
+          return false;
+        }
+        break;
+      case 3:
+        if (formData.deposit < 0) {
+          Alert.alert('Error', 'Deposit amount cannot be negative');
           return false;
         }
         break;
@@ -268,10 +294,25 @@ export default function ListingPage() {
     try {
       await createPost({
         posterId: convexUser._id,
-        ...formData,
-        // fueltype: formData.fuelType,
-        // carImageUrl: imageStorageIds[0],
+        carReg: formData.carReg,
+        carMake: formData.carMake,
+        carModel: formData.carModel,
+        carYear: formData.carYear,
+        rentRange: formData.rentRange,
+        carLocation: formData.carLocation,
+        carDescription: formData.carDescription,
+        postDate: formData.postDate,
+        fuelType: formData.fuelType,
         carImageUrl: imageStorageIds,
+        features: formData.features,
+        status: 'active',
+        price: formData.price,
+        mileage: formData.mileage,
+        transmission: formData.transmission,
+        insurance: formData.insurance,
+        availability: formData.availability,
+        rules: formData.rules,
+        deposit: formData.deposit
       });
 
       Alert.alert(
@@ -367,6 +408,66 @@ export default function ListingPage() {
         </View>
       </View>
 
+      <View style={styles.row}>
+        <View style={styles.halfInput}>
+          <Text style={styles.label}>Mileage (km)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="10000"
+            keyboardType="numeric"
+            value={formData.mileage.toString()}
+            onChangeText={(text) => setFormData({ ...formData, mileage: Number(text) || 0 })}
+          />
+        </View>
+        <View style={styles.halfInput}>
+          <Text style={styles.label}>Fuel Type</Text>
+          <View style={styles.selectContainer}>
+            {FUEL_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.selectOption,
+                  formData.fuelType === type && styles.selectOptionActive,
+                ]}
+                onPress={() => setFormData({ ...formData, fuelType: type })}
+              >
+                <Text style={[
+                  styles.selectOptionText,
+                  formData.fuelType === type && styles.selectOptionTextActive,
+                ]}>
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.row}>
+        <View style={styles.fullWidth}>
+          <Text style={styles.label}>Transmission</Text>
+          <View style={styles.selectContainer}>
+            {TRANSMISSION_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.selectOption,
+                  formData.transmission === type && styles.selectOptionActive,
+                ]}
+                onPress={() => setFormData({ ...formData, transmission: type })}
+              >
+                <Text style={[
+                  styles.selectOptionText,
+                  formData.transmission === type && styles.selectOptionTextActive,
+                ]}>
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+
       <Text style={styles.label}>Features</Text>
       <View style={styles.featuresList}>
         {CAR_FEATURES.map((feature) => (
@@ -404,8 +505,12 @@ export default function ListingPage() {
         style={[styles.input, styles.rateInput]}
         placeholder="1000"
         keyboardType="numeric"
-        value={formData.rentRange}
-        onChangeText={(text) => setFormData({ ...formData, rentRange: text })}
+        value={formData.price.toString()}
+        onChangeText={(text) => setFormData({ 
+          ...formData, 
+          price: Number(text) || 0,
+          rentRange: text ? `${text} KES/day` : '' 
+        })}
       />
   
       <Text style={styles.label}>Location</Text>
@@ -436,6 +541,104 @@ export default function ListingPage() {
     </View>
   );
 
+  const renderAdditionalInfo = () => (
+    <View style={styles.formSection}>
+      <Text style={styles.label}>Deposit Amount (KES)</Text>
+      <TextInput
+        style={[styles.input, styles.rateInput]}
+        placeholder="5000"
+        keyboardType="numeric"
+        value={formData.deposit.toString()}
+        onChangeText={(text) => setFormData({ 
+          ...formData, 
+          deposit: Number(text) || 0
+        })}
+      />
+
+      <Text style={styles.label}>Insurance</Text>
+      <View style={styles.selectContainer}>
+        {['Standard', 'Premium', 'Third-party', 'None'].map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.selectOption,
+              formData.insurance === type && styles.selectOptionActive,
+            ]}
+            onPress={() => setFormData({ ...formData, insurance: type })}
+          >
+            <Text style={[
+              styles.selectOptionText,
+              formData.insurance === type && styles.selectOptionTextActive,
+            ]}>
+              {type}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Availability</Text>
+      <View style={styles.daysContainer}>
+        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+          <TouchableOpacity
+            key={day}
+            style={[
+              styles.dayButton,
+              formData.availability.includes(day) && styles.dayButtonActive,
+            ]}
+            onPress={() => {
+              const newAvailability = formData.availability.includes(day)
+                ? formData.availability.filter(d => d !== day)
+                : [...formData.availability, day];
+              setFormData({ ...formData, availability: newAvailability });
+            }}
+          >
+            <Text style={[
+              styles.dayButtonText,
+              formData.availability.includes(day) && styles.dayButtonTextActive,
+            ]}>
+              {day.substring(0, 3)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Rules</Text>
+      <View style={styles.ruleContainer}>
+        {formData.rules.map((rule, index) => (
+          <View key={index} style={styles.ruleItem}>
+            <TextInput
+              style={[styles.input, styles.ruleInput]}
+              value={rule}
+              onChangeText={(text) => {
+                const newRules = [...formData.rules];
+                newRules[index] = text;
+                setFormData({ ...formData, rules: newRules });
+              }}
+            />
+            <TouchableOpacity
+              style={styles.removeRuleBtn}
+              onPress={() => {
+                const newRules = formData.rules.filter((_, i) => i !== index);
+                setFormData({ ...formData, rules: newRules });
+              }}
+            >
+              <Ionicons name="close-circle" size={24} color="#FF3B30" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <TouchableOpacity
+          style={styles.addRuleBtn}
+          onPress={() => {
+            setFormData({ ...formData, rules: [...formData.rules, ''] });
+          }}
+        >
+          <Ionicons name="add-circle" size={20} color="#007AFF" />
+          <Text style={styles.addRuleText}>Add Rule</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderPreview = () => (
     <View style={styles.previewContainer}>
       <LinearGradient
@@ -450,7 +653,21 @@ export default function ListingPage() {
           <Text style={styles.previewTitle}>
             {formData.carYear} {formData.carMake} {formData.carModel}
           </Text>
-          <Text style={styles.previewPrice}>KES {formData.rentRange}/day</Text>
+          <Text style={styles.previewPrice}>KES {formData.price}/day</Text>
+          <View style={styles.previewSpecs}>
+            <View style={styles.previewSpecItem}>
+              <Ionicons name="speedometer" size={16} color="#666" />
+              <Text style={styles.previewSpecText}>{formData.mileage} km</Text>
+            </View>
+            <View style={styles.previewSpecItem}>
+              <Ionicons name="water" size={16} color="#666" />
+              <Text style={styles.previewSpecText}>{formData.fuelType}</Text>
+            </View>
+            <View style={styles.previewSpecItem}>
+              <Ionicons name="settings" size={16} color="#666" />
+              <Text style={styles.previewSpecText}>{formData.transmission}</Text>
+            </View>
+          </View>
           <Text style={styles.previewLocation}>
             <Ionicons name="location" size={16} color="#666" />
             {' '}{formData.carLocation}
@@ -459,12 +676,43 @@ export default function ListingPage() {
             {formData.carDescription}
           </Text>
           <View style={styles.previewFeatures}>
-          {formData.features.map((feature) => (
+            {formData.features.map((feature) => (
               <View key={feature} style={styles.previewFeatureTag}>
                 <Text style={styles.previewFeatureText}>{feature}</Text>
               </View>
             ))}
           </View>
+          {formData.deposit > 0 && (
+            <Text style={styles.previewDeposit}>
+              <Text style={styles.previewDepositLabel}>Deposit: </Text>
+              KES {formData.deposit}
+            </Text>
+          )}
+          {formData.availability.length > 0 && (
+            <View style={styles.previewAvailability}>
+              <Text style={styles.previewSectionTitle}>Available on:</Text>
+              <View style={styles.previewDays}>
+                {formData.availability.map((day) => (
+                  <View key={day} style={styles.previewDay}>
+                    <Text style={styles.previewDayText}>{day.substring(0, 3)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          {formData.rules.length > 0 && (
+            <View style={styles.previewRules}>
+              <Text style={styles.previewSectionTitle}>Rules:</Text>
+              {formData.rules.map((rule, index) => (
+                rule.trim() && (
+                  <View key={index} style={styles.previewRule}>
+                    <Ionicons name="alert-circle" size={16} color="#FF3B30" />
+                    <Text style={styles.previewRuleText}>{rule}</Text>
+                  </View>
+                )
+              ))}
+            </View>
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -479,7 +727,9 @@ export default function ListingPage() {
       case 2:
         return <CarFormStep step={2}>{renderLocationStep()}</CarFormStep>;
       case 3:
-        return <CarFormStep step={3}>{renderPreview()}</CarFormStep>;
+        return <CarFormStep step={3}>{renderAdditionalInfo()}</CarFormStep>;
+      case 4:
+        return <CarFormStep step={4}>{renderPreview()}</CarFormStep>;
       default:
         return null;
     }
@@ -580,14 +830,17 @@ const styles = StyleSheet.create({
   progressContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingVertical: 16,
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
+    flexWrap: 'wrap',
   },
   progressStep: {
     alignItems: 'center',
+    width: '20%', // 5 steps
+    marginBottom: 8,
   },
   progressDot: {
     width: 32,
@@ -598,9 +851,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   progressLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'DMSans_500Medium',
     color: '#999',
+    textAlign: 'center',
   },
   progressLabelActive: {
     color: '#007AFF',
@@ -688,6 +942,9 @@ const styles = StyleSheet.create({
   halfInput: {
     width: '48%',
   },
+  fullWidth: {
+    width: '100%'
+  },
   label: {
     fontSize: 14,
     fontFamily: 'DMSans_600Medium',
@@ -774,6 +1031,21 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     marginBottom: 12,
   },
+  previewSpecs: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  previewSpecItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  previewSpecText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+  },
   previewLocation: {
     fontSize: 16,
     fontFamily: 'DMSans_400Regular',
@@ -802,6 +1074,56 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   previewFeatureText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+  },
+  previewDeposit: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+  },
+  previewDepositLabel: {
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
+  },
+  previewAvailability: {
+    marginTop: 20,
+  },
+  previewSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  previewDays: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  previewDay: {
+    backgroundColor: '#E9F7FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  previewDayText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_500Medium',
+    color: '#007AFF',
+  },
+  previewRules: {
+    marginTop: 20,
+  },
+  previewRule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  previewRuleText: {
+    marginLeft: 8,
     fontSize: 14,
     fontFamily: 'DMSans_400Regular',
     color: '#666',
@@ -940,4 +1262,82 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E9ECEF',
   },
-});
+  selectContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  selectOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    margin: 4,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  selectOptionActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  selectOptionText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_500Medium',
+    color: '#666',
+  },
+  selectOptionTextActive: {
+    color: '#FFF',
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  dayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    margin: 4,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  dayButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  dayButtonText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_500Medium',
+    color: '#666',
+  },
+  dayButtonTextActive: {
+    color: '#FFF',
+  },
+  ruleContainer: {
+    marginBottom: 16,
+  },
+  ruleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  ruleInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  removeRuleBtn: {
+    padding: 8,
+  },
+  addRuleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  addRuleText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontFamily: 'DMSans_500Medium',
+    color: '#007AFF',
+  },
+ });
