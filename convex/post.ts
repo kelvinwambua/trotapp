@@ -70,3 +70,4 @@ export const getAllPosts = query({
     return processedPosts;
   }
 });
+

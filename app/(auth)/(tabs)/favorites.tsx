@@ -5,7 +5,6 @@ export default function FavoritesScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Favorites</Text>
-      {/* Add favorites list here */}
     </View>
   );
 }

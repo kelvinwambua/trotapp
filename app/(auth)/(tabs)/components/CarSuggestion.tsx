@@ -1,7 +1,9 @@
 import React, { useCallback, useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Pressable } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Link, router } from "expo-router";
+import BookingScreen from "../book/[id]";
 
 interface LocationType {
   latitude: number;
@@ -39,11 +41,19 @@ console.log(cars[0].image||"No Image")
     setSelectedCar(carId);
   };
 
-  const handleBookNow = useCallback(() => {
-    console.log(`Booking car with ID: ${selectedCar}`);
-  }, [selectedCar]);
-
   const selectedCarData = cars.find(car => car.id === selectedCar);
+
+
+  //const handleBookNow() 
+    //console.log(`Booking car with ID: ${selectedCar}`);
+    //console.log(selectedCarData)
+    //router.push({
+      //pathname: `/book/[id]`,
+      //params: { id: selectedCar } 
+  //})
+  
+
+  //const selectedCarData = cars.find(car => car.id === selectedCar);
 
   return (
     <>
@@ -62,10 +72,12 @@ console.log(cars[0].image||"No Image")
                 style={styles.viewAllButton}
                 onPress={() => {
                   console.log('View all pressed');
+                  router.replace('/search');  
                 }}
               >
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
+          
             </View>
           </View>
           
@@ -118,7 +130,13 @@ console.log(cars[0].image||"No Image")
         </View>
         <TouchableOpacity
           style={styles.bookButton}
-          onPress={handleBookNow}
+          onPress={() => {
+            console.log(`Booking car with ID: ${selectedCar}`);
+            router.push({
+              pathname: `/book/[id]`,
+              params: { id: selectedCar } 
+              })
+          }}
         >
           <Text style={styles.bookButtonText}>Book Now</Text>
         </TouchableOpacity>
