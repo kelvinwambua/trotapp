@@ -138,7 +138,7 @@ const accountItems = [
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.menuGrid}>
           {menuItems.map(item => (
-            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={()=>router.push("/(auth)/(tabs)/profile/cars")}>
+            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={()=>router.push("/(auth)/(tabs)/(profile)/cars")}>
               <View style={[styles.menuIcon, { backgroundColor: `${item.color}15` }]}>
                 <MaterialCommunityIcons name={item.icon} size={24} color={item.color} />
               </View>

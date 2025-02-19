@@ -9,6 +9,12 @@ export default function ProfileLayout() {
           headerShown: false 
         }} 
       />
+            <Stack.Screen 
+        name="cars" 
+        options={{ 
+          headerShown: false 
+        }} 
+      />
 
 
     </Stack>
