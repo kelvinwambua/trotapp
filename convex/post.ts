@@ -299,6 +299,73 @@ export const getPostsByUser = query({
 //         }));
 //     }
 // });
+export const getCarRentalStats = query({
+    args: {
+      userId: v.id('users'),
+      timeFrame: v.string(),
+    },
+    handler: async (ctx, { userId, timeFrame }): Promise<{
+      cars: Array<{
+        id: string;
+        name: string;
+        imageUrl: string;
+        totalRentals: number;
+        totalEarnings: number;
+        utilization: number;
+        avgDailyEarnings: number;
+      }>;
+    }> => {
+
+      const posts = await ctx.db
+        .query('posts')
+        .filter(q => q.eq(q.field('posterId'), userId))
+        .collect();
+  
+   
+      const bookings = await ctx.db
+        .query('bookings')
+        .filter(q => q.eq(q.field('ownerId'), userId))
+        .collect();
+  
+
+      const transactions = await ctx.db
+        .query('transactions')
+        .filter(q => q.eq(q.field('receiverId'), userId))
+        .filter(q => q.eq(q.field('status'), 'completed'))
+        .collect();
+  
+ 
+      const carStats = await Promise.all(posts.map(async (post) => {
+        const carBookings = bookings.filter(b => b.postId === post._id);
+        const carTransactions = transactions.filter(t => t.bookingId && carBookings.some(b => b._id === t.bookingId));
+        
+        const totalEarnings = carTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalDaysRented = carBookings.reduce((sum, booking) => {
+          const start = new Date(booking.startDate);
+          const end = new Date(booking.endDate);
+          return sum + Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        }, 0);
+  
+        const imageUrl = post.carImageUrl?.[0] ? 
+          await ctx.storage.getUrl(post.carImageUrl[0] as Id<'_storage'>) :
+          null;
+  
+        return {
+          id: post._id,
+          name: `${post.carYear} ${post.carMake} ${post.carModel}`,
+          imageUrl: imageUrl || '',
+          totalRentals: carBookings.length,
+          totalEarnings,
+          utilization: Math.round((totalDaysRented / 30) * 100), 
+          avgDailyEarnings: totalDaysRented ? Math.round(totalEarnings / totalDaysRented) : 0,
+        };
+      }));
+  
+      return {
+        cars: carStats.sort((a, b) => b.totalEarnings - a.totalEarnings)
+      };
+    },
+  });
 export const getUserCars = query({
   args: {
     userId: v.string()

@@ -81,6 +81,21 @@ export const Booking = {
   paymentMethod: v.optional(v.string()),
   transactionId: v.optional(v.string()),
 };
+export const Earnings = {
+  userId: v.id('users'),
+  amount: v.number(),
+  type: v.string(), 
+  date: v.string(),
+  bookingId: v.optional(v.id('bookings')),
+  transactionId: v.optional(v.id('transactions')),
+  status: v.string(), 
+  description: v.optional(v.string()),
+  metadata: v.optional(v.object({
+    platform_fee: v.optional(v.number()),
+    insurance_fee: v.optional(v.number()),
+    net_amount: v.optional(v.number()),
+  })),
+};
 
 export const Review = {
   reviewerId: v.id('users'),
@@ -172,5 +187,10 @@ export default defineSchema({
     .index('byBooking', ['bookingId'])
     .index('byPayer', ['payerId'])
     .index('byReceiver', ['receiverId'])
-    .index('byStatus', ['status'])
+    .index('byStatus', ['status']),
+  earnings: defineTable(Earnings)
+  .index('byUserId', ['userId'])
+  .index('byDate', ['date'])
+  .index('byStatus', ['status'])
+  .index('byType', ['type']),
 });
