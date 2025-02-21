@@ -63,10 +63,23 @@ const ProfileScreen = () => {
       status: 'Verified'
     },
     {
-      id: 'payment-methods',
+      id: 'paymen-methods',
       title: 'Payment Methods',
       icon: 'credit-card-outline',
       status: '2 cards'
+    },
+    {
+      id: 'subaccount',
+      title: 'Accept Payments',
+      icon: 'cash-multiple',
+      status: 'Under Development'
+   
+    },
+    {
+      id: 'payment',
+      title: 'Test Payments',
+      icon: 'test-tube',
+      status: 'Dev'
     },
     {
       id: 'notifications',

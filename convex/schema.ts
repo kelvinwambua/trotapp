@@ -143,6 +143,26 @@ export const Transaction = {
   fees: v.optional(v.number()),
   currency: v.optional(v.string()),
 };
+export const PaymentAccount = {
+  userId: v.id('users'),
+  flutterwaveSubAccountId: v.string(),
+  accountType: v.string(), 
+  accountNumber: v.string(),
+  bankCode: v.string(),
+  bankName: v.string(),
+  splitRatio: v.number(), 
+  status: v.string(), 
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  metadata: v.optional(v.object({
+    settlement_bank: v.optional(v.string()),
+    account_holder_name: v.optional(v.string()),
+    mobile_number: v.optional(v.string()),
+  })),
+};
+
+
+
 
 export default defineSchema({
   users: defineTable(User)
@@ -151,6 +171,10 @@ export default defineSchema({
       searchField: 'username',
       filterFields: ['location', 'verificationStatus']
     }),
+    paymentAccounts: defineTable(PaymentAccount)
+    .index('byUserId', ['userId'])
+    .index('bySubAccountId', ['flutterwaveSubAccountId'])
+    .index('byStatus', ['status']),
 
   messages: defineTable(Message)
     .index('byThreadId', ['threadId'])
