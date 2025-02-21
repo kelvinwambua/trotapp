@@ -263,42 +263,42 @@ export const getPostsByUser = query({
     }
 });
 
-// export const getSavedPosts = query({
-//     args: { userId: v.id('users') },
-//     handler: async (ctx, args) => {
-//         const posts = await ctx.db
-//             .query('posts')
-//             .filter(q => q.includes(q.field('savedBy'), args.userId))
-//             .collect();
+export const getSavedPosts = query({
+    args: { userId: v.id("users") },
+    handler: async (ctx, { userId }) => {
+        const allPosts = await ctx.db.query("posts").collect();
+        const savedPosts = allPosts.filter(post => post.savedBy?.includes(userId));
 
-//         return Promise.all(posts.map(async (post) => {
-//             const carImageUrls = await Promise.all(
-//                 post.carImageUrl.map(async (storageId) => {
-//                     if (typeof storageId !== 'string') return null;
-//                     try {
-//                         return await ctx.storage.getUrl(storageId as Id<'_storage'>);
-//                     } catch {
-//                         return null;
-//                     }
-//                 })
-//             );
-
-//             const owner = await ctx.db.get(post.posterId);
-
-//             return {
-//                 ...post,
-//                 carImageUrls: carImageUrls.filter((url): url is string => typeof url === 'string'),
-//                 ownerDetails: owner ? {
-//                     id: owner._id,
-//                     name: `${owner.first_name || ''} ${owner.last_name || ''}`.trim(),
-//                     imageUrl: owner.imageUrl,
-//                     rating: owner.rating,
-//                     verificationStatus: owner.verificationStatus
-//                 } : null
-//             };
-//         }));
-//     }
-// });
+        return Promise.all(
+            savedPosts.map(async post => {
+                const carImageUrls = await Promise.all(
+                    (post.carImageUrl || []).map(async storageId => {
+                        if (typeof storageId !== "string") return null;
+                        try {
+                            return await ctx.storage.getUrl(storageId as Id<"_storage">);
+                        } catch {
+                            return null;
+                        }
+                    })
+                );
+                const owner = await ctx.db.get(post.posterId);
+                return {
+                    ...post,
+                    carImageUrls: carImageUrls.filter((url): url is string => Boolean(url)),
+                    ownerDetails: owner
+                        ? {
+                                id: owner._id,
+                                name: `${owner.first_name || ""} ${owner.last_name || ""}`.trim(),
+                                imageUrl: owner.imageUrl,
+                                rating: owner.rating,
+                                verificationStatus: owner.verificationStatus,
+                            }
+                        : null,
+                };
+            })
+        );
+    },
+});
 export const getCarRentalStats = query({
     args: {
       userId: v.id('users'),
