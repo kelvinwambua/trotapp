@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet, TouchableOpacity, Text, View, Image } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useUser } from '@clerk/clerk-expo';
@@ -72,6 +72,16 @@ const Layout = () => {
           title: 'Favorites',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="(messages)"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color, size, focused }) => (
+            // <Ionicons name={focused ? 'mail' : 'heart-outline'} size={size} color={color} />
+            <MaterialIcons name={focused ? 'message' :'email'} size={size} color={color}></MaterialIcons>
           ),
         }}
       />
