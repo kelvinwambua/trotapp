@@ -45,7 +45,7 @@ const Layout = () => {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="(search)"
         options={{
           title: 'Search',
           tabBarIcon: ({ color, size, focused }) => (
@@ -66,7 +66,7 @@ const Layout = () => {
           },
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="favorites"
         options={{
           title: 'Favorites',
@@ -74,7 +74,7 @@ const Layout = () => {
             <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="(messages)"
         options={{
