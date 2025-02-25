@@ -48,6 +48,7 @@ const Layout = () => {
         name="(search)"
         options={{
           title: 'Search',
+          headerShown:false,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'search' : 'search-outline'} size={size} color={color} />
           ),

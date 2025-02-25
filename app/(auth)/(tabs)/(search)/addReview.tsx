@@ -1,8 +1,11 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import React from "react";
+import { router } from "expo-router";
+import React,{useState} from "react";
 import { View,Text,TextInput,StyleSheet,TouchableOpacity } from "react-native";
 
 export default function AddReview(){
+
+    const [rating,setRating]= useState(0)
     return (
         <View style={styles.container} >
             <View style={styles.rating}>
@@ -18,27 +21,23 @@ export default function AddReview(){
             </View>
             <View>
                 <Text style={{fontFamily:'DMSans_700Bold'}}>Give a rating</Text>
-                <View style={{flexDirection:'row',gap:10,alignItems:'center',justifyContent:'center'}}>
-                    <TouchableOpacity>
-                        <MaterialIcons name="star" size={50} color={'grey'}></MaterialIcons>
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <MaterialIcons name="star" size={50} color={'grey'}></MaterialIcons>
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <MaterialIcons name="star" size={50} color={'grey'}></MaterialIcons>
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <MaterialIcons name="star" size={50} color={'grey'}></MaterialIcons>
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <MaterialIcons name="star" size={50} color={'grey'}></MaterialIcons>
-                    </TouchableOpacity>
+                <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                            <MaterialIcons
+                                name="star"
+                                size={50}
+                                color={star <= rating ? '#e3b614' : 'grey'} // Change color based on rating
+                            />
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 
             <View style={{alignItems:'center',marginTop:30}}>
-                <TouchableOpacity style={styles.submitBtn}>
+                <TouchableOpacity onPress={()=>{
+                    router.back()
+                }} style={styles.submitBtn}>
                     <Text style={{fontFamily:'DMSans_700Bold',color:'white'}}>Submit Review</Text>
                 </TouchableOpacity>
             </View>
@@ -55,6 +54,11 @@ const styles=StyleSheet.create({
     },
     stars:{
 
+    },
+    starsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10,
     },
     submitBtn:{
         width:'70%',

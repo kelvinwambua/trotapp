@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity,SafeAreaView, Image, ScrollView, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
@@ -75,7 +75,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Ionicons name="car" size={32} color="#007AFF" />
         <Text style={styles.logo}>Trot</Text>
@@ -267,7 +267,7 @@ export default function SearchScreen() {
           <Text style={styles.noResults}>No cars found matching your filters.</Text>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     color: '#333',
+    fontFamily:'DMSans_700Bold'
   },
   inputContainer: {
     flexDirection: 'row',
