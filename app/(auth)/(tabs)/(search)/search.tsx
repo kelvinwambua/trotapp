@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity,SafeAreaView, Image, ScrollView, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { router } from 'expo-router';
 
 
 const carImages = [
@@ -74,7 +75,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Ionicons name="car" size={32} color="#007AFF" />
         <Text style={styles.logo}>Trot</Text>
@@ -240,28 +241,33 @@ export default function SearchScreen() {
       <ScrollView showsVerticalScrollIndicator style={styles.resultsContainer}>
         {filteredCars.length > 0 ? (
           filteredCars.map(car => (
-            <View key={car.id} style={styles.resultItem}>
-              {/* <Image source={{ uri: car.image }} style={styles.carImage} /> */}
-              <Image source={require('@/assets/images/bg.png')} style={styles.carImage} />
-
-              <View>
-                <Text style={styles.carName}>{car.name}</Text>
-                <Text style={styles.carDetails}>{car.brand} - {car.type}</Text>
-                <Text style={styles.carDetails}>{car.capacity} Seater - {car.fuel}</Text>
-                <Text style={styles.carDetails}>Price: {car.price}</Text>
-                <View style={styles.ratingContainer}>
-                      <Text style={styles.reviewText}>Reviews: {car.reviews}</Text>
-                      <MaterialIcons name='star' color={'yellow'} size={20}></MaterialIcons>
-                      
+            <TouchableOpacity
+            onPress={()=>{
+              router.push('/(auth)/(tabs)/(search)/reviews')
+            }}
+            >
+              <View key={car.id} style={styles.resultItem}>
+                {/* <Image source={{ uri: car.image }} style={styles.carImage} /> */}
+                <Image source={require('@/assets/images/bg.png')} style={styles.carImage} />
+                <View>
+                  <Text style={styles.carName}>{car.name}</Text>
+                  <Text style={styles.carDetails}>{car.brand} - {car.type}</Text>
+                  <Text style={styles.carDetails}>{car.capacity} Seater - {car.fuel}</Text>
+                  <Text style={styles.carDetails}>Price: {car.price}</Text>
+                  <View style={styles.ratingContainer}>
+                        <Text style={styles.reviewText}>Reviews: {car.reviews}</Text>
+                        <MaterialIcons name='star' color={'#e3b614'} size={20}></MaterialIcons>
+              
+                  </View>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={styles.noResults}>No cars found matching your filters.</Text>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
