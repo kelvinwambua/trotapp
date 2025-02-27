@@ -154,6 +154,7 @@ export default function ListingPage() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   const convexUser = useQuery(api.users.current);
+  
   const createPost = useMutation(api.post.createPost);
   const { generateUploadUrl, uploadFile } = useConvexFileUpload();
 

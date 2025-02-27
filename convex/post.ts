@@ -263,42 +263,109 @@ export const getPostsByUser = query({
     }
 });
 
-// export const getSavedPosts = query({
-//     args: { userId: v.id('users') },
-//     handler: async (ctx, args) => {
-//         const posts = await ctx.db
-//             .query('posts')
-//             .filter(q => q.includes(q.field('savedBy'), args.userId))
-//             .collect();
+export const getSavedPosts = query({
+    args: { userId: v.id("users") },
+    handler: async (ctx, { userId }) => {
+        const allPosts = await ctx.db.query("posts").collect();
+        const savedPosts = allPosts.filter(post => post.savedBy?.includes(userId));
 
-//         return Promise.all(posts.map(async (post) => {
-//             const carImageUrls = await Promise.all(
-//                 post.carImageUrl.map(async (storageId) => {
-//                     if (typeof storageId !== 'string') return null;
-//                     try {
-//                         return await ctx.storage.getUrl(storageId as Id<'_storage'>);
-//                     } catch {
-//                         return null;
-//                     }
-//                 })
-//             );
+        return Promise.all(
+            savedPosts.map(async post => {
+                const carImageUrls = await Promise.all(
+                    (post.carImageUrl || []).map(async storageId => {
+                        if (typeof storageId !== "string") return null;
+                        try {
+                            return await ctx.storage.getUrl(storageId as Id<"_storage">);
+                        } catch {
+                            return null;
+                        }
+                    })
+                );
+                const owner = await ctx.db.get(post.posterId);
+                return {
+                    ...post,
+                    carImageUrls: carImageUrls.filter((url): url is string => Boolean(url)),
+                    ownerDetails: owner
+                        ? {
+                                id: owner._id,
+                                name: `${owner.first_name || ""} ${owner.last_name || ""}`.trim(),
+                                imageUrl: owner.imageUrl,
+                                rating: owner.rating,
+                                verificationStatus: owner.verificationStatus,
+                            }
+                        : null,
+                };
+            })
+        );
+    },
+});
+export const getCarRentalStats = query({
+    args: {
+      userId: v.id('users'),
+      timeFrame: v.string(),
+    },
+    handler: async (ctx, { userId, timeFrame }): Promise<{
+      cars: Array<{
+        id: string;
+        name: string;
+        imageUrl: string;
+        totalRentals: number;
+        totalEarnings: number;
+        utilization: number;
+        avgDailyEarnings: number;
+      }>;
+    }> => {
 
-//             const owner = await ctx.db.get(post.posterId);
+      const posts = await ctx.db
+        .query('posts')
+        .filter(q => q.eq(q.field('posterId'), userId))
+        .collect();
+  
+   
+      const bookings = await ctx.db
+        .query('bookings')
+        .filter(q => q.eq(q.field('ownerId'), userId))
+        .collect();
+  
 
-//             return {
-//                 ...post,
-//                 carImageUrls: carImageUrls.filter((url): url is string => typeof url === 'string'),
-//                 ownerDetails: owner ? {
-//                     id: owner._id,
-//                     name: `${owner.first_name || ''} ${owner.last_name || ''}`.trim(),
-//                     imageUrl: owner.imageUrl,
-//                     rating: owner.rating,
-//                     verificationStatus: owner.verificationStatus
-//                 } : null
-//             };
-//         }));
-//     }
-// });
+      const transactions = await ctx.db
+        .query('transactions')
+        .filter(q => q.eq(q.field('receiverId'), userId))
+        .filter(q => q.eq(q.field('status'), 'completed'))
+        .collect();
+  
+ 
+      const carStats = await Promise.all(posts.map(async (post) => {
+        const carBookings = bookings.filter(b => b.postId === post._id);
+        const carTransactions = transactions.filter(t => t.bookingId && carBookings.some(b => b._id === t.bookingId));
+        
+        const totalEarnings = carTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalDaysRented = carBookings.reduce((sum, booking) => {
+          const start = new Date(booking.startDate);
+          const end = new Date(booking.endDate);
+          return sum + Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        }, 0);
+  
+        const imageUrl = post.carImageUrl?.[0] ? 
+          await ctx.storage.getUrl(post.carImageUrl[0] as Id<'_storage'>) :
+          null;
+  
+        return {
+          id: post._id,
+          name: `${post.carYear} ${post.carMake} ${post.carModel}`,
+          imageUrl: imageUrl || '',
+          totalRentals: carBookings.length,
+          totalEarnings,
+          utilization: Math.round((totalDaysRented / 30) * 100), 
+          avgDailyEarnings: totalDaysRented ? Math.round(totalEarnings / totalDaysRented) : 0,
+        };
+      }));
+  
+      return {
+        cars: carStats.sort((a, b) => b.totalEarnings - a.totalEarnings)
+      };
+    },
+  });
 export const getUserCars = query({
   args: {
     userId: v.string()
@@ -368,21 +435,45 @@ export const searchPosts = query({
         }))
     },
     handler: async (ctx, args) => {
-        let query = ctx.db.query('posts');
+        let posts = await ctx.db.query('posts').collect();
+
+        if (args.searchTerm) {
+            const searchTermLower = args.searchTerm.toLowerCase();
+            posts = posts.filter(post => {
+
+                const makeMatch = post.carMake.toLowerCase().includes(searchTermLower);
+                const modelMatch = post.carModel.toLowerCase().includes(searchTermLower);
+                const locationMatch = post.carLocation.toLowerCase().includes(searchTermLower);
+                const descriptionMatch = post.carDescription.toLowerCase().includes(searchTermLower);
+                const yearMatch = post.carYear.toLowerCase().includes(searchTermLower);
+                
+          
+                const combinedMakeModel = `${post.carMake} ${post.carModel}`.toLowerCase();
+                const combinedModelMake = `${post.carModel} ${post.carMake}`.toLowerCase();
+                const combinedMatch = combinedMakeModel.includes(searchTermLower) || 
+                                     combinedModelMake.includes(searchTermLower);
+                
+
+                const fullCarName = `${post.carYear} ${post.carMake} ${post.carModel}`.toLowerCase();
+                const fullCarNameMatch = fullCarName.includes(searchTermLower);
+                
+                return makeMatch || modelMatch || locationMatch || descriptionMatch || 
+                       yearMatch || combinedMatch || fullCarNameMatch;
+            });
+        }
+        
 
         if (args.filters) {
             const { make, model, location, minPrice, maxPrice, transmission, fuelType } = args.filters;
             
-            if (make) query = query.filter(q => q.eq(q.field('carMake'), make));
-            if (model) query = query.filter(q => q.eq(q.field('carModel'), model));
-            if (location) query = query.filter(q => q.eq(q.field('carLocation'), location));
-            if (minPrice) query = query.filter(q => q.gte(q.field('price'), minPrice));
-            if (maxPrice) query = query.filter(q => q.lte(q.field('price'), maxPrice));
-            if (transmission) query = query.filter(q => q.eq(q.field('transmission'), transmission));
-            if (fuelType) query = query.filter(q => q.eq(q.field('fuelType'), fuelType));
+            if (make) posts = posts.filter(post => post.carMake.toLowerCase() === make.toLowerCase());
+            if (model) posts = posts.filter(post => post.carModel.toLowerCase() === model.toLowerCase());
+            if (location) posts = posts.filter(post => post.carLocation.toLowerCase() === location.toLowerCase());
+            if (minPrice !== undefined) posts = posts.filter(post => post.price >= minPrice);
+            if (maxPrice !== undefined) posts = posts.filter(post => post.price <= maxPrice);
+            if (transmission) posts = posts.filter(post => post.transmission === transmission);
+            if (fuelType) posts = posts.filter(post => post.fuelType === fuelType);
         }
-
-        const posts = await query.collect();
 
         return Promise.all(posts.map(async (post) => {
             const carImageUrls = await Promise.all(
@@ -412,4 +503,90 @@ export const searchPosts = query({
         }));
     }
 });
+
+export const getSearchSuggestions = query({
+    args: {
+        searchTerm: v.string(),
+        limit: v.optional(v.number())
+    },
+    handler: async (ctx, args) => {
+        const maxSuggestions = args.limit || 10;
+        
+        if (!args.searchTerm || args.searchTerm.length < 2) {
+            return [];
+        }
+        
+        const searchTermLower = args.searchTerm.toLowerCase();
+        const posts = await ctx.db.query('posts').collect();
+        
+ 
+        const makes = new Set<string>();
+        const models = new Set<string>();
+        const locations = new Set<string>();
+        const years = new Set<string>();
+        
+        posts.forEach(post => {
+            makes.add(post.carMake);
+            models.add(post.carModel);
+            locations.add(post.carLocation);
+            years.add(post.carYear);
+        });
+        
+
+        const suggestions: Array<{
+            type: 'make' | 'model' | 'location' | 'year' | 'combined',
+            value: string
+        }> = [];
+        
+
+        Array.from(makes).forEach(make => {
+            if (make.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'make', value: make });
+            }
+        });
+        
+
+        Array.from(models).forEach(model => {
+            if (model.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'model', value: model });
+            }
+        });
+        
+
+        Array.from(locations).forEach(location => {
+            if (location.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'location', value: location });
+            }
+        });
+        
+
+        Array.from(years).forEach(year => {
+            if (year.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'year', value: year });
+            }
+        });
+        
+   
+        posts.forEach(post => {
+            const combined = `${post.carMake} ${post.carModel}`;
+            if (combined.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'combined', value: combined });
+            }
+        });
+        
+ 
+        const uniqueValues = new Set<string>();
+        const finalSuggestions = suggestions
+            .filter(suggestion => {
+                if (uniqueValues.has(suggestion.value)) return false;
+                uniqueValues.add(suggestion.value);
+                return true;
+            })
+            .slice(0, maxSuggestions);
+            
+        return finalSuggestions;
+    }
+});
+
+
 

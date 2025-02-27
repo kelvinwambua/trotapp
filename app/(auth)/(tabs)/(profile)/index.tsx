@@ -17,9 +17,11 @@ const ProfileScreen = () => {
   });
 
   if (!isLoaded || !isSignedIn || !fontsLoaded) {
-    return <View style={styles.container}>
-      <Text>Loading...</Text>
-    </View>;
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
   }
 
   const menuItems = [
@@ -38,7 +40,7 @@ const ProfileScreen = () => {
       color: '#34C759'
     },
     {
-      id: 'saved',
+      id: 'saved-cars',
       title: 'Saved Cars',
       subtitle: '12 cars saved',
       icon: 'heart',
@@ -53,42 +55,57 @@ const ProfileScreen = () => {
     }
   ];
 
-
-
-const accountItems = [
-  {
-    id: 'verification',
-    title: 'Identity Verification',
-    icon: 'shield-check-outline',
-    status: 'Verified'
-  },
-  {
-    id: 'payments',
-    title: 'Payment Methods',
-    icon: 'credit-card-outline',
-    status: '2 cards'
-  },
-  {
-    id: 'notifications',
-    title: 'Notifications',
-    icon: 'bell-outline',
-    status: 'On'
-  },
-  {
-    id: 'support',
-    title: 'Help & Support',
-    icon: 'help-circle-outline',
-    status: '24/7'
-  },
-  {
-    id: 'settings',
-    title: 'Settings',
-    icon: 'cog-outline',
-    status: 'Profile, security'
-  }
-];
-
-
+  const accountItems = [
+    {
+      id: 'identity',
+      title: 'Identity Verification',
+      icon: 'shield-check-outline',
+      status: 'Verified'
+    },
+    {
+      id: 'payment-methods',
+      title: 'Payment Methods',
+      icon: 'credit-card-outline',
+      status: '2 cards'
+    },
+    {
+      id: 'subaccount',
+      title: 'Accept Payments',
+      icon: 'cash-multiple',
+      status: 'Under Development'
+   
+    },
+    {
+      id: 'payment',
+      title: 'Test Payments',
+      icon: 'test-tube',
+      status: 'Dev'
+    },
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      icon: 'bell-outline',
+      status: 'On'
+    },
+    {
+      id: 'notification',
+      title: 'Push Notification Test',
+      icon: 'bell-outline',
+      status: 'Onss'
+    },
+    {
+      id: 'support',
+      title: 'Help & Support',
+      icon: 'help-circle-outline',
+      status: '24/7'
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      icon: 'cog-outline',
+      status: 'Profile, security'
+    }
+  ];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -108,7 +125,7 @@ const accountItems = [
                 <MaterialCommunityIcons name="camera" size={20} color="#FFF" />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{user.firstName} {user.lastName}</Text>
               <Text style={styles.userEmail}>{user.emailAddresses[0].emailAddress}</Text>
@@ -138,7 +155,11 @@ const accountItems = [
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.menuGrid}>
           {menuItems.map(item => (
-            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={()=>router.push("/(auth)/(tabs)/(profile)/cars")}>
+            <TouchableOpacity
+              key={item.id}
+              style={styles.menuItem}
+              onPress={() => router.push(`/(auth)/(tabs)/(profile)/${item.id}`)}
+            >
               <View style={[styles.menuIcon, { backgroundColor: `${item.color}15` }]}>
                 <MaterialCommunityIcons name={item.icon} size={24} color={item.color} />
               </View>
@@ -154,8 +175,10 @@ const accountItems = [
         <Text style={styles.sectionTitle}>Account Settings</Text>
         <View style={styles.accountList}>
           {accountItems.map(item => (
-            <TouchableOpacity key={item.id} style={styles.accountItem}
-            //  onPress={()=>router.push(`profile/identity`)}
+            <TouchableOpacity
+              key={item.id}
+              style={styles.accountItem}
+              onPress={() => router.push(`/(auth)/(tabs)/(profile)/${item.id}`)}
             >
               <View style={styles.accountItemLeft}>
                 <MaterialCommunityIcons name={item.icon} size={24} color="#1A1A1A" />

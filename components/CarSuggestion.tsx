@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Pressable 
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, router } from "expo-router";
-import BookingScreen from "../book/[id]";
+
 
 interface LocationType {
   latitude: number;

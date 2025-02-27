@@ -42,6 +42,7 @@ export const Post = {
   mileage: v.optional(v.number()),
   transmission: v.optional(v.string()),
   views: v.optional(v.number()),
+  
   savedBy: v.optional(v.array(v.id('users'))),
   insurance: v.optional(v.string()),
   availability: v.optional(v.array(v.string())),
@@ -80,6 +81,21 @@ export const Booking = {
   insuranceOption: v.optional(v.string()),
   paymentMethod: v.optional(v.string()),
   transactionId: v.optional(v.string()),
+};
+export const Earnings = {
+  userId: v.id('users'),
+  amount: v.number(),
+  type: v.string(), 
+  date: v.string(),
+  bookingId: v.optional(v.id('bookings')),
+  transactionId: v.optional(v.id('transactions')),
+  status: v.string(), 
+  description: v.optional(v.string()),
+  metadata: v.optional(v.object({
+    platform_fee: v.optional(v.number()),
+    insurance_fee: v.optional(v.number()),
+    net_amount: v.optional(v.number()),
+  })),
 };
 
 export const Review = {
@@ -128,6 +144,26 @@ export const Transaction = {
   fees: v.optional(v.number()),
   currency: v.optional(v.string()),
 };
+export const PaymentAccount = {
+  userId: v.id('users'),
+  flutterwaveSubAccountId: v.string(),
+  accountType: v.string(), 
+  accountNumber: v.string(),
+  bankCode: v.string(),
+  bankName: v.string(),
+  splitRatio: v.number(), 
+  status: v.string(), 
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  metadata: v.optional(v.object({
+    settlement_bank: v.optional(v.string()),
+    account_holder_name: v.optional(v.string()),
+    mobile_number: v.optional(v.string()),
+  })),
+};
+
+
+
 
 export default defineSchema({
   users: defineTable(User)
@@ -136,6 +172,10 @@ export default defineSchema({
       searchField: 'username',
       filterFields: ['location', 'verificationStatus']
     }),
+    paymentAccounts: defineTable(PaymentAccount)
+    .index('byUserId', ['userId'])
+    .index('bySubAccountId', ['flutterwaveSubAccountId'])
+    .index('byStatus', ['status']),
 
   messages: defineTable(Message)
     .index('byThreadId', ['threadId'])
@@ -150,6 +190,7 @@ export default defineSchema({
       searchField: 'carDescription',
       filterFields: ['carMake', 'carModel', 'carYear', 'carLocation', 'status']
     }),
+    
 
   bookings: defineTable(Booking)
     .index('byRenter', ['renterId'])
@@ -172,5 +213,10 @@ export default defineSchema({
     .index('byBooking', ['bookingId'])
     .index('byPayer', ['payerId'])
     .index('byReceiver', ['receiverId'])
-    .index('byStatus', ['status'])
+    .index('byStatus', ['status']),
+  earnings: defineTable(Earnings)
+  .index('byUserId', ['userId'])
+  .index('byDate', ['date'])
+  .index('byStatus', ['status'])
+  .index('byType', ['type']),
 });
