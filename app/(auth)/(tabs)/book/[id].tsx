@@ -1,10 +1,9 @@
 import { NavigationContainerRefContext } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router';
-import React from 'react';
-
-import { View, Text, StyleSheet } from 'react-native';
-
+import React, {useState} from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Switch, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function BookingScreen(){
     
