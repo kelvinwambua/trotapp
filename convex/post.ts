@@ -435,21 +435,45 @@ export const searchPosts = query({
         }))
     },
     handler: async (ctx, args) => {
-        let query = ctx.db.query('posts');
+        let posts = await ctx.db.query('posts').collect();
+
+        if (args.searchTerm) {
+            const searchTermLower = args.searchTerm.toLowerCase();
+            posts = posts.filter(post => {
+
+                const makeMatch = post.carMake.toLowerCase().includes(searchTermLower);
+                const modelMatch = post.carModel.toLowerCase().includes(searchTermLower);
+                const locationMatch = post.carLocation.toLowerCase().includes(searchTermLower);
+                const descriptionMatch = post.carDescription.toLowerCase().includes(searchTermLower);
+                const yearMatch = post.carYear.toLowerCase().includes(searchTermLower);
+                
+          
+                const combinedMakeModel = `${post.carMake} ${post.carModel}`.toLowerCase();
+                const combinedModelMake = `${post.carModel} ${post.carMake}`.toLowerCase();
+                const combinedMatch = combinedMakeModel.includes(searchTermLower) || 
+                                     combinedModelMake.includes(searchTermLower);
+                
+
+                const fullCarName = `${post.carYear} ${post.carMake} ${post.carModel}`.toLowerCase();
+                const fullCarNameMatch = fullCarName.includes(searchTermLower);
+                
+                return makeMatch || modelMatch || locationMatch || descriptionMatch || 
+                       yearMatch || combinedMatch || fullCarNameMatch;
+            });
+        }
+        
 
         if (args.filters) {
             const { make, model, location, minPrice, maxPrice, transmission, fuelType } = args.filters;
             
-            if (make) query = query.filter(q => q.eq(q.field('carMake'), make));
-            if (model) query = query.filter(q => q.eq(q.field('carModel'), model));
-            if (location) query = query.filter(q => q.eq(q.field('carLocation'), location));
-            if (minPrice) query = query.filter(q => q.gte(q.field('price'), minPrice));
-            if (maxPrice) query = query.filter(q => q.lte(q.field('price'), maxPrice));
-            if (transmission) query = query.filter(q => q.eq(q.field('transmission'), transmission));
-            if (fuelType) query = query.filter(q => q.eq(q.field('fuelType'), fuelType));
+            if (make) posts = posts.filter(post => post.carMake.toLowerCase() === make.toLowerCase());
+            if (model) posts = posts.filter(post => post.carModel.toLowerCase() === model.toLowerCase());
+            if (location) posts = posts.filter(post => post.carLocation.toLowerCase() === location.toLowerCase());
+            if (minPrice !== undefined) posts = posts.filter(post => post.price >= minPrice);
+            if (maxPrice !== undefined) posts = posts.filter(post => post.price <= maxPrice);
+            if (transmission) posts = posts.filter(post => post.transmission === transmission);
+            if (fuelType) posts = posts.filter(post => post.fuelType === fuelType);
         }
-
-        const posts = await query.collect();
 
         return Promise.all(posts.map(async (post) => {
             const carImageUrls = await Promise.all(
@@ -479,4 +503,90 @@ export const searchPosts = query({
         }));
     }
 });
+
+export const getSearchSuggestions = query({
+    args: {
+        searchTerm: v.string(),
+        limit: v.optional(v.number())
+    },
+    handler: async (ctx, args) => {
+        const maxSuggestions = args.limit || 10;
+        
+        if (!args.searchTerm || args.searchTerm.length < 2) {
+            return [];
+        }
+        
+        const searchTermLower = args.searchTerm.toLowerCase();
+        const posts = await ctx.db.query('posts').collect();
+        
+ 
+        const makes = new Set<string>();
+        const models = new Set<string>();
+        const locations = new Set<string>();
+        const years = new Set<string>();
+        
+        posts.forEach(post => {
+            makes.add(post.carMake);
+            models.add(post.carModel);
+            locations.add(post.carLocation);
+            years.add(post.carYear);
+        });
+        
+
+        const suggestions: Array<{
+            type: 'make' | 'model' | 'location' | 'year' | 'combined',
+            value: string
+        }> = [];
+        
+
+        Array.from(makes).forEach(make => {
+            if (make.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'make', value: make });
+            }
+        });
+        
+
+        Array.from(models).forEach(model => {
+            if (model.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'model', value: model });
+            }
+        });
+        
+
+        Array.from(locations).forEach(location => {
+            if (location.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'location', value: location });
+            }
+        });
+        
+
+        Array.from(years).forEach(year => {
+            if (year.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'year', value: year });
+            }
+        });
+        
+   
+        posts.forEach(post => {
+            const combined = `${post.carMake} ${post.carModel}`;
+            if (combined.toLowerCase().includes(searchTermLower)) {
+                suggestions.push({ type: 'combined', value: combined });
+            }
+        });
+        
+ 
+        const uniqueValues = new Set<string>();
+        const finalSuggestions = suggestions
+            .filter(suggestion => {
+                if (uniqueValues.has(suggestion.value)) return false;
+                uniqueValues.add(suggestion.value);
+                return true;
+            })
+            .slice(0, maxSuggestions);
+            
+        return finalSuggestions;
+    }
+});
+
+
 

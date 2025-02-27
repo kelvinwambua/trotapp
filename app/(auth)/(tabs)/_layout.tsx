@@ -1,55 +1,72 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { StyleSheet, TouchableOpacity, Text, View, Image } from 'react-native';
+import { StyleSheet, View, Image, Text } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
 import { useUser } from '@clerk/clerk-expo';
 
-const CreateTabIcon = ({ color, size }: { color: string; size: number }) => (
-  <View style={styles.createIconContainer}>
-    <Ionicons name="add" size={size} color={color} />
-  </View>
-);
-const colors = {
-  primary: '#4dabfe',    
 
+const Colors = {
+  primary: '#3366FF',
+  primaryLight: '#EEF3FF',
+  background: '#F7F9FC',
+  white: '#FFFFFF',
+  black: '#222B45',
+  gray: '#8F9BB3',
+  lightGray: '#EDF1F7',
+  borderGray: '#E4E9F2',
 };
 
-const Layout = () => {
-  const { signOut } = useAuth();
-  const {user} = useUser();
-  const router = useRouter();
+const CreateTabIcon = ({ focused }: { focused: boolean }) => (
+  <View style={[
+    styles.createIconContainer,
+    focused && styles.focusedTabItem
+  ]}>
+    <MaterialIcons name="add" size={24} color={focused ? Colors.primary : Colors.gray} />
+  </View>
+);
 
+const Layout = () => {
+  const { user } = useUser();
+  const router = useRouter();
+  
   return (
     <Tabs
       screenOptions={{
         tabBarShowLabel: false,
-        tabBarActiveTintColor: '#000',
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.gray,
+        headerShadowVisible: false,
+        headerStyle: {
+          backgroundColor: Colors.background,
+        },
+        headerTitleStyle: {
+          fontFamily: 'DMSans_700Bold',
+          fontSize: 18,
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color, size, focused }) => (
-            
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
-          ),
-          headerRight: () => (
-            <TouchableOpacity onPress={() => signOut()}>
-              <Text style={styles.logoutText}>Log out</Text>
-            </TouchableOpacity>
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.tabIconContainer, focused && styles.focusedTabItem]}>
+              <MaterialIcons name="home" size={24} color={color} />
+            </View>
           ),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'search' : 'search-outline'} size={size} color={color} />
+          title: 'Explore',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.tabIconContainer, focused && styles.focusedTabItem]}>
+              <MaterialIcons name="explore" size={24} color={color} />
+            </View>
           ),
         }}
       />
@@ -57,7 +74,7 @@ const Layout = () => {
         name="create"
         options={{
           title: 'Create',
-          tabBarIcon: ({ color, size }) => <CreateTabIcon color={color} size={size} />,
+          tabBarIcon: ({ focused }) => <CreateTabIcon focused={focused} />,
         }}
         listeners={{
           tabPress: (e) => {
@@ -69,42 +86,35 @@ const Layout = () => {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />
+          title: 'Inbox',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.tabIconContainer, focused && styles.focusedTabItem]}>
+              <MaterialIcons name="inbox" size={24} color={color} />
+            </View>
           ),
         }}
       />
-            <Tabs.Screen 
-                name="(profile)"
-                
-                options={{
-                    title: 'Profile',
-                    headerShown: false,
-                    
-                    tabBarIcon: ({ focused }) => (
-                        <View style={{        
-                            width: 40,
-                            height: 40,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            borderRadius: 12, 
-                            backgroundColor: focused ? `${colors.primary}15` : 'transparent' 
-                        }}>
-                            <Image 
-                                source={{ uri: user?.imageUrl||`https://robohash.org/${user?.firstName}` }} 
-                                style={{
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: 14,
-                                    borderWidth: focused ? 2 : 0,
-                                    borderColor: colors.primary,
-                                }}
-                            />
-                        </View>
-                    )
-                }}
-            />
+      <Tabs.Screen
+        name="(profile)"
+        options={{
+          title: 'Profile',
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.profileTabContainer, focused && styles.focusedTabItem]}>
+              {user?.imageUrl ? (
+                <Image
+                  source={{ uri: user.imageUrl }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={styles.profileFallback}>
+                  <Text style={styles.profileInitial}>{user?.firstName?.charAt(0) || 'U'}</Text>
+                </View>
+              )}
+            </View>
+          )
+        }}
+      />
     </Tabs>
   );
 };
@@ -112,13 +122,61 @@ const Layout = () => {
 export default Layout;
 
 const styles = StyleSheet.create({
-  logoutText: {
-    marginRight: 10,
-    color: 'blue',
+  tabBar: {
+    backgroundColor: Colors.white,
+    height: 60,
+    paddingBottom: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderGray,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  tabIconContainer: {
+    width: 48,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  focusedTabItem: {
+    backgroundColor: Colors.primaryLight,
   },
   createIconContainer: {
-    backgroundColor: Colors.itemBackground,
+    width: 48,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 8,
-    padding: 6,
+  },
+  profileTabContainer: {
+    width: 48,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  profileImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  profileFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileInitial: {
+    color: Colors.white,
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 14,
   },
 });

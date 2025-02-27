@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useUser } from '@clerk/clerk-expo';
 import { useNavigation } from '@react-navigation/native';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 const IdentityVerificationScreen = () => {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -17,6 +19,8 @@ const IdentityVerificationScreen = () => {
     DMSans_500Medium,
     DMSans_700Bold,
   });
+
+  
 
   const [idFrontImage, setIdFrontImage] = useState(null);
   const [idBackImage, setIdBackImage] = useState(null);

@@ -30,6 +30,7 @@ const BookingsIndexScreen: React.FC = () => {
         userId: convexUser?._id!,
         limit: 20
     });
+    
     console.log(recentBookings)
     console.log(bookingStats)
     if (!recentBookings || !bookingStats) {

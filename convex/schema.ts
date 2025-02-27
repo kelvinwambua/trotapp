@@ -42,6 +42,7 @@ export const Post = {
   mileage: v.optional(v.number()),
   transmission: v.optional(v.string()),
   views: v.optional(v.number()),
+  
   savedBy: v.optional(v.array(v.id('users'))),
   insurance: v.optional(v.string()),
   availability: v.optional(v.array(v.string())),
@@ -189,6 +190,7 @@ export default defineSchema({
       searchField: 'carDescription',
       filterFields: ['carMake', 'carModel', 'carYear', 'carLocation', 'status']
     }),
+    
 
   bookings: defineTable(Booking)
     .index('byRenter', ['renterId'])

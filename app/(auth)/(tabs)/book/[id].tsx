@@ -9,6 +9,7 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function BookingScreen(){
     
     const { id } = useLocalSearchParams();
+    
     return(
      
             <View>
