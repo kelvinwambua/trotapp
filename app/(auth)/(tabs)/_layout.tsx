@@ -60,7 +60,7 @@ const Layout = () => {
         }}
       />
       <Tabs.Screen
-        name="(search)"
+        name="search"
         options={{
           title: 'Explore',
           tabBarIcon: ({ color, focused }) => (
@@ -83,12 +83,14 @@ const Layout = () => {
           },
         }}
       />
-      {/* <Tabs.Screen
-        name="favorites"
+      <Tabs.Screen
+        name="(messages)"
         options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />
+          title: 'Inbox',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.tabIconContainer, focused && styles.focusedTabItem]}>
+              <MaterialIcons name="inbox" size={24} color={color} />
+            </View>
           ),
         }}
       />

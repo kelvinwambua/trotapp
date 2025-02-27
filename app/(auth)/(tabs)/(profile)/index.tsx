@@ -63,7 +63,7 @@ const ProfileScreen = () => {
       status: 'Verified'
     },
     {
-      id: 'paymen-methods',
+      id: 'payment-methods',
       title: 'Payment Methods',
       icon: 'credit-card-outline',
       status: '2 cards'
@@ -86,6 +86,12 @@ const ProfileScreen = () => {
       title: 'Notifications',
       icon: 'bell-outline',
       status: 'On'
+    },
+    {
+      id: 'notification',
+      title: 'Push Notification Test',
+      icon: 'bell-outline',
+      status: 'Onss'
     },
     {
       id: 'support',
