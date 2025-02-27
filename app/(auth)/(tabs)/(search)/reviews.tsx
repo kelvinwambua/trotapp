@@ -1,9 +1,56 @@
-import React from "react";
+import React, { useState } from "react";
 import { View,ScrollView,Text,StyleSheet,TouchableOpacity,TextInput } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 export default function ReviewScreen(){
+
+    const [selectedTab,setSelectedTab]=useState('car')
+
+    const carReviews = [
+        { id: 1, name: "Sammy Kitonga", rating: 4, date: "2 days ago", text: "The car was amazing. No maintenance issues at all!" },
+        { id: 2, name: "Jane Doe", rating: 5, date: "1 week ago", text: "Super smooth ride and well-maintained vehicle." },
+        { id: 3, name: "Kevin Oketch", rating: 0, date: "yesterday", text: "The car was emitting a weired squeaky sound. Maybe you should have that addressed before renting out the car" },
+        { id: 4, name: "Kerry Luvai", rating: 5, date: "2 weeks ago", text: "The car was amazing. Would highly recommend!!" },
+        { id: 5, name: "John Doe", rating: 1, date: "4 hours ago", text: "The car was extremely poorly maintained when i got it!" },
+    ];
+
+    const userReviews = [
+        { id: 1, name: "John Smith", rating: 5, date: "2 hours ago", text: "The renter was super helpful and whenever an issue came up, he was willing to walk me through i could resolve it." },
+        { id: 2, name: "Joab Bodo", rating: 1, date: "3 days ago", text: "The renter was extremely rude!" },
+        { id: 3, name: "Alice Brown", rating: 5, date: "5 days ago", text: "The rental experience was excellent. Highly recommend!" },
+
+    ];
+
+    const renderReviews = (reviews) => {
+        return reviews.map((review) => (
+            <View key={review.id} style={styles.reviewContainer}>
+                <View style={styles.upperReview}>
+                    <View style={{ flexDirection: 'row' }}>
+                        <MaterialIcons name="account-circle" size={40} />
+                        <View style={{ marginLeft: 10 }}>
+                            <Text style={{ fontFamily: 'DMSans_700Bold' }}>{review.name}</Text>
+                            <View style={styles.stars}>
+                                {[...Array(5)].map((_, i) => (
+                                    <MaterialIcons 
+                                        key={i} 
+                                        name="star" 
+                                        color={i < review.rating ? '#e3b614' : 'grey'} 
+                                    />
+                                ))}
+                                <Text style={{ fontFamily: 'DMSans_700Bold', marginLeft: 10 }}>{review.rating}.0</Text>
+                            </View>
+                        </View>
+                    </View>
+                    <Text style={{ color: 'grey', fontFamily: 'DMSans_700Bold' }}>{review.date}</Text>
+                </View>
+                <View style={styles.bottomReview}>
+                    <Text style={{ color: 'grey', fontFamily: 'DMSans_700Bold' }}>{review.text}</Text>
+                </View>
+            </View>
+        ));
+    };
+
     return(
             <View style={styles.container}>
 
@@ -37,133 +84,26 @@ export default function ReviewScreen(){
                         ))}
                     </View>
                 </View>
-                <ScrollView contentContainerStyle={{width:'100%',padding:20,alignItems:'center'}} >
-                    <View style={styles.reviewContainer}>
-                        <View style={styles.upperReview}>
-                            <View style={{flexDirection:'row'}}>
-                                <MaterialIcons name="account-circle" size={40}></MaterialIcons>
-                                <View style={{alignItems:'baseline'}}>
-                                    <Text style={{fontFamily:'DMSans_700Bold'}}>Sammy Kitonga</Text>
-                                    <View style={styles.stars}>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'grey'} ></MaterialIcons>
-                                        <Text style={{fontFamily:'DMSans_700Bold',marginLeft:10}}>4.0</Text>
-                                    </View>
-                                </View>
-                            </View>
-                            <Text style={{color:'grey',fontFamily:'DMSans_700Bold'}}>2 days ago</Text>
-                        </View>
-                        <View style={styles.bottomReview}>
-                            <Text style={{color:'grey',minHeight:'auto',fontFamily:'DMSans_700Bold'}}>
-                                The cars is amazing. I like that i didnt have to take it out for maintenance or had any underlying issues that i had to deal with.
-                            </Text>
-                        </View>
-                    </View>
 
-                    <View style={styles.reviewContainer}>
-                        <View style={styles.upperReview}>
-                            <View style={{flexDirection:'row'}}>
-                                <MaterialIcons name="account-circle" size={40}></MaterialIcons>
-                                <View style={{alignItems:'baseline'}}>
-                                    <Text style={{fontFamily:'DMSans_700Bold'}}>Sammy Kitonga</Text>
-                                    <View style={styles.stars}>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'grey'} ></MaterialIcons>
-                                        <Text style={{fontFamily:'DMSans_700Bold',marginLeft:10}}>4.0</Text>
-                                    </View>
-                                </View>
-                            </View>
-                            <Text style={{color:'grey',fontFamily:'DMSans_700Bold'}}>2 days ago</Text>
-                        </View>
-                        <View style={styles.bottomReview}>
-                            <Text style={{color:'grey',minHeight:'auto',fontFamily:'DMSans_700Bold'}}>
-                                The cars is amazing. I like that i didnt have to take it out for maintenance or had any underlying issues that i had to deal with.
-                            </Text>
-                        </View>
-                    </View>
+            <View style={styles.toggleContainer}>
+                <TouchableOpacity 
+                    style={[styles.toggleButton, selectedTab === "car" && styles.activeTab]} 
+                    onPress={() => setSelectedTab("car")}
+                >
+                    <Text style={[selectedTab==="car" ? styles.toggleText:styles.untoggleText ]}>Car Reviews</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    style={[styles.toggleButton, selectedTab === "user" && styles.activeTab]} 
+                    onPress={() => setSelectedTab("user")}
+                >
+                    <Text style={[selectedTab==="user" ? styles.toggleText:styles.untoggleText ]}>Renter Reviews</Text>
+                </TouchableOpacity>
+            </View>
 
-                    <View style={styles.reviewContainer}>
-                        <View style={styles.upperReview}>
-                            <View style={{flexDirection:'row'}}>
-                                <MaterialIcons name="account-circle" size={40}></MaterialIcons>
-                                <View style={{alignItems:'baseline'}}>
-                                    <Text style={{fontFamily:'DMSans_700Bold'}}>Sammy Kitonga</Text>
-                                    <View style={styles.stars}>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'grey'} ></MaterialIcons>
-                                        <Text style={{fontFamily:'DMSans_700Bold',marginLeft:10}}>4.0</Text>
-                                    </View>
-                                </View>
-                            </View>
-                            <Text style={{color:'grey',fontFamily:'DMSans_700Bold'}}>2 days ago</Text>
-                        </View>
-                        <View style={styles.bottomReview}>
-                            <Text style={{color:'grey',minHeight:'auto',fontFamily:'DMSans_700Bold'}}>
-                                The cars is amazing. I like that i didnt have to take it out for maintenance or had any underlying issues that i had to deal with.
-                            </Text>
-                        </View>
-                    </View>
+            <ScrollView contentContainerStyle={{ width: '100%', padding: 20, alignItems: 'center' }}>
+                {selectedTab === "car" ? renderReviews(carReviews) : renderReviews(userReviews)}
+            </ScrollView>
 
-
-                    <View style={styles.reviewContainer}>
-                        <View style={styles.upperReview}>
-                            <View style={{flexDirection:'row'}}>
-                                <MaterialIcons name="account-circle" size={40}></MaterialIcons>
-                                <View style={{alignItems:'baseline'}}>
-                                    <Text style={{fontFamily:'DMSans_700Bold'}}>Sammy Kitonga</Text>
-                                    <View style={styles.stars}>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'grey'} ></MaterialIcons>
-                                        <Text style={{fontFamily:'DMSans_700Bold',marginLeft:10}}>4.0</Text>
-                                    </View>
-                                </View>
-                            </View>
-                            <Text style={{color:'grey',fontFamily:'DMSans_700Bold'}}>2 days ago</Text>
-                        </View>
-                        <View style={styles.bottomReview}>
-                            <Text style={{color:'grey',minHeight:'auto',fontFamily:'DMSans_700Bold'}}>
-                                The cars is amazing. I like that i didnt have to take it out for maintenance or had any underlying issues that i had to deal with.
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.reviewContainer}>
-                        <View style={styles.upperReview}>
-                            <View style={{flexDirection:'row'}}>
-                                <MaterialIcons name="account-circle" size={40}></MaterialIcons>
-                                <View style={{alignItems:'baseline'}}>
-                                    <Text style={{fontFamily:'DMSans_700Bold'}}>Sammy Kitonga</Text>
-                                    <View style={styles.stars}>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'#e3b614'}></MaterialIcons>
-                                        <MaterialIcons name="star" color={'grey'} ></MaterialIcons>
-                                        <Text style={{fontFamily:'DMSans_700Bold',marginLeft:10}}>4.0</Text>
-                                    </View>
-                                </View>
-                            </View>
-                            <Text style={{color:'grey',fontFamily:'DMSans_700Bold'}}>2 days ago</Text>
-                        </View>
-                        <View style={styles.bottomReview}>
-                            <Text style={{color:'grey',minHeight:'auto',fontFamily:'DMSans_700Bold'}}>
-                                The cars is amazing. I like that i didnt have to take it out for maintenance or had any underlying issues that i had to deal with.
-                            </Text>
-                        </View>
-                    </View>
-                </ScrollView>
                 <View style={styles.btnContainer}>
                     <TouchableOpacity onPress={()=>{
                         router.push('/(auth)/(search)/addReview')
@@ -171,7 +111,7 @@ export default function ReviewScreen(){
                         <Text style={{fontFamily:'DMSans_700Bold',color:'white'}}>Write a review</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={()=>{
-                        router.push('/(auth)/(search)/addReview')
+                        router.push('/(auth)/(tabs)/book')
                     }} style={[styles.addReview,{backgroundColor:'lightgreen'}]}>
                         <Text style={{fontFamily:'DMSans_700Bold',color:'black'}}>Book now</Text>
                     </TouchableOpacity>
@@ -187,6 +127,32 @@ const styles=StyleSheet.create({
         position:'relative',
         flex:1,
         
+    },
+
+    toggleContainer: {
+        flexDirection: "row",
+        width: "100%",
+        justifyContent: "center",
+        marginVertical: 10,
+    },
+    toggleButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        marginHorizontal: 5,
+        borderRadius: 20,
+        backgroundColor: "#ddd",
+    },
+    activeTab: {
+        backgroundColor: "#007AFF",
+        color:'white'
+    },
+    toggleText: {
+        fontFamily: "DMSans_700Bold",
+        color: "white",
+    },
+    untoggleText:{
+        fontFamily: "DMSans_700Bold",
+        color: "black", 
     },
     ratingWrapper:{
         backgroundColor: 'white', 

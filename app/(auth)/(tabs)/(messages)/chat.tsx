@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text,Image, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker'
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState([
@@ -12,6 +13,7 @@ export default function ChatScreen() {
   ]);
   
   const [newMessage, setNewMessage] = useState('');
+  const [image,setImage]=useState(null);
 
   const sendMessage = () => {
     if (newMessage.trim().length === 0) return; 
@@ -21,10 +23,25 @@ export default function ChatScreen() {
       sender: 'You',
       text: newMessage,
       isUser: true,
+      image:image
     };
 
     setMessages([...messages, newMsg]); 
-    setNewMessage(''); 
+    setNewMessage('');
+    setImage(null) 
+  };
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
   };
 
   return (
@@ -45,12 +62,25 @@ export default function ChatScreen() {
               message.isUser ? styles.userBubble : styles.senderBubble
             ]}
           >
-            <Text style={styles.messageText}>{message.text}</Text>
+            {message.text ? <Text style={message.isUser ? styles.senderMsgTxt : styles.receiverMsgText}>{message.text}</Text> : null}
+            {message.image && <Image source={{ uri: message.image }} style={styles.image} />}
           </View>
         ))}
       </ScrollView>
 
+      {image && (
+        <View style={styles.imagePreview}>
+          <Image source={{ uri: image }} style={styles.image} />
+          <TouchableOpacity onPress={() => setImage(null)}>
+            <MaterialIcons name="cancel" size={24} color="red" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.inputContainer}>
+        <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
+          <MaterialIcons name="photo" size={24} color="#007AFF" />
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           placeholder="Type a message..."
@@ -112,10 +142,29 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     backgroundColor: '#007AFF',
   },
-  messageText: {
+  receiverMsgText: {
     fontSize: 16,
     color: '#333',
     fontFamily:'DMSans_700Bold'
+  },
+  senderMsgTxt:{
+    fontSize: 16,
+    color: 'white',
+    fontFamily:'DMSans_700Bold'
+  },
+  image:{
+    width: 200,
+    height: 150, 
+    borderRadius: 10, 
+    marginTop: 5
+  },
+  imagePreview:{
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 10, 
+    backgroundColor: '#FFF', 
+    borderTopWidth: 1, 
+    borderColor: '#EEE'
   },
   inputContainer: {
     flexDirection: 'row',

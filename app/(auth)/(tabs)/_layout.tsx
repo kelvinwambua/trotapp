@@ -82,7 +82,7 @@ const Layout = () => {
           title: 'Messages',
           tabBarIcon: ({ color, size, focused }) => (
             // <Ionicons name={focused ? 'mail' : 'heart-outline'} size={size} color={color} />
-            <MaterialIcons name={focused ? 'message' :'email'} size={size} color={color}></MaterialIcons>
+            <MaterialIcons name={focused ? 'message' :'message'} size={size} color={color}></MaterialIcons>
           ),
         }}
       />

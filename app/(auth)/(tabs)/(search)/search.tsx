@@ -349,15 +349,16 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    // fontWeight: 'bold',
     marginTop: 10,
     marginBottom: 5,
+    fontFamily:'DMSans_700Bold'
   },
   filterButton: {
     backgroundColor: '#E9ECEF',
     paddingVertical: 12, 
     paddingHorizontal: 20,
-    borderRadius: 24, 
+    borderRadius: 40, 
     marginHorizontal: 5,
     shadowColor: '#000',
     shadowOpacity: 0.9,
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     width:150,
     justifyContent:'center',
-    alignItems:'center'
+    alignItems:'center',
   },
   selectedFilterButton: {
     backgroundColor: '#007AFF',
@@ -388,6 +389,7 @@ const styles = StyleSheet.create({
     fontWeight: 'condensedBold',
     marginTop: 10,
     marginBottom: 5,
+    fontFamily:'DMSans_700Bold'
   },
   buttonRow:{
       flexDirection: 'row',
