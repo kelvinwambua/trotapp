@@ -19,39 +19,6 @@ interface LocationType {
   longitude: number;
 }
 
-interface Post {
-  _id: string;
-  carMake: string;
-  carModel: string;
-  carYear: string;
-  rentRange: string;
-  carLocation: string;
-  carDescription: string;
-  carImageUrl: string[];
-  carImageUrls?: string[];
-  features?: string[];
-  fuelType?: string;
-}
-
-interface ProcessedCar {
-  id: string;
-  name: string;
-  price: string;
-  image: string;
-  type: string;
-  distance: string;
-  features: string[];
-  fuelType?: string;
-  location: string;
-  description: string;
-  coordinates: LocationType;
-  carImageUrls?: string[];
-}
-
-interface CarMarkerProps {
-  car: ProcessedCar;
-}
-
 const geocodeLocation = async (locationString: string): Promise<LocationType | null> => {
   try {
     const response = await fetch(
@@ -70,17 +37,6 @@ const geocodeLocation = async (locationString: string): Promise<LocationType | n
   }
 };
 
-const CarMarker = ({ car }: CarMarkerProps) => (
-  <View style={styles.carMarker}>
-    <View style={styles.carIconContainer}>
-      <MaterialCommunityIcons 
-        name="car" 
-        size={24} 
-        color="#FFFFFF" 
-      />
-    </View>
-  </View>
-);
 
 const NAIROBI_COORDS = {
   latitude: -1.2921,
@@ -111,10 +67,7 @@ const Page = () => {
   });
   
   const posts = useQuery(api.post.getAllPosts); 
-  const navigation = useNavigation();
-  const bottomSheetRef = useRef<BottomSheet>(null);
   const [userLocation, setUserLocation] = useState<LocationType | null>(null);
-  const [processedCars, setProcessedCars] = useState<ProcessedCar[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -142,54 +95,6 @@ const Page = () => {
       });
     })();
   }, []);
-
-  useEffect(() => {
-    if (posts && userLocation) {
-        const processCars = async () => {
-            const carsWithDistance = await Promise.all(posts.map(async (post: any, index: number) => {
-                const carCoordinates = await geocodeLocation(post.carLocation);
-                if (!carCoordinates) {
-                    console.warn(`Failed to geocode location for car ${post._id}: ${post.carLocation}`);
-                }
-                
-                const carLocation = carCoordinates 
-                    ? {
-                        latitude: addJitter(carCoordinates.latitude),
-                        longitude: addJitter(carCoordinates.longitude)
-                      } 
-                    : NAIROBI_COORDS;
-                
-                const distance = calculateDistance(
-                    userLocation.latitude,
-                    userLocation.longitude,
-                    carLocation.latitude,
-                    carLocation.longitude
-                );
-
-                const processedCar = {
-                    id: post._id,
-                    name: `${post.carMake} ${post.carModel} ${post.carYear}`,
-                    price: ` ${post.rentRange}`,
-                    image: post.carImageUrls?.[0],
-                    type: post.carMake,
-                    distance: `${distance.toFixed(1)} km`,
-                    features: post.features || [],
-                    fuelType: post.fuelType,
-                    location: post.carLocation,
-                    description: post.carDescription,
-                    coordinates: carLocation,
-                    carImageUrls: post.carImageUrls || []
-                };
-
-                return processedCar;
-            }));
-            
-            setProcessedCars(carsWithDistance);
-        };
-
-        processCars();
-    }
-}, [posts, userLocation]);
 
   const handleSearch = async () => {
     const coordinates = await geocodeLocation(searchQuery);
@@ -243,16 +148,7 @@ const Page = () => {
                     <View style={styles.userPinCore} />
                   </View>
                 </PointAnnotation>
-                
-                {processedCars.map((car) => (
-                  <PointAnnotation
-                    key={`car-${car.id}`}
-                    id={`car-${car.id}`}
-                    coordinate={[car.coordinates.longitude, car.coordinates.latitude]}
-                  >
-                    <CarMarker car={car} />
-                  </PointAnnotation>
-                ))}
+               
               </>
             )}
           </MapView>
