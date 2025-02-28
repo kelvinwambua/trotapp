@@ -38,10 +38,7 @@ export default function BookingScreen() {
                         <Text style={styles.mutedText}> Automatic |</Text>
                         <Text style={styles.mutedText}> Air Con</Text>
                   </View>
-                  {/*Description */}
-                  <View style={styles.descriptionbox}>
-                        <Text> This is a good car</Text>
-                  </View>
+                  
                   <View style={styles.flexbox}>
                        
                        <View style={styles.flexboxes}>
@@ -50,14 +47,13 @@ export default function BookingScreen() {
                        </View>
                        <View style={styles.flexboxes}>
                               <Ionicons name="shield-checkmark-sharp" size={20} color="black" ></Ionicons>
-                       </View>
-                 </View>
-                  {/*Reviews */}
-                  <View style={styles.reviewsbox}>
-                        <Text>I drove this car to Mombasa with no issues whatsoever  - 24 February 2025</Text>
 
-                        <Text>Posted by</Text>
-                  </View>
+                       </View>
+
+
+                 
+                 </View>
+                 
             </View>
             <TouchableOpacity onPress={()=>console.log('Booking...')}>
                   <Text style={styles.button}>Book</Text>
@@ -88,6 +84,11 @@ const styles = StyleSheet.create({
             shadowRadius:6,
             elevation:8,
             flex: 1
+      },
+      usertitle:{
+            fontSize: 11,
+            color: 'black',
+            marginBottom: 2,
       },
 
       
