@@ -161,7 +161,11 @@ export const PaymentAccount = {
     mobile_number: v.optional(v.string()),
   })),
 };
-
+export const PushToken = {
+  userId: v.id('users'),
+  token: v.string(),
+  createdAt: v.string(),
+};
 
 
 
@@ -172,6 +176,9 @@ export default defineSchema({
       searchField: 'username',
       filterFields: ['location', 'verificationStatus']
     }),
+    pushTokens: defineTable(PushToken)
+  .index('byUserId', ['userId'])
+  .index('byToken', ['token']),
     paymentAccounts: defineTable(PaymentAccount)
     .index('byUserId', ['userId'])
     .index('bySubAccountId', ['flutterwaveSubAccountId'])

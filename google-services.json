@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "450059998623",
+    "project_id": "trot-9c308",
+    "storage_bucket": "trot-9c308.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:450059998623:android:acbc14414867c328dfd9aa",
+        "android_client_info": {
+          "package_name": "com.ivy.trotapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCO1rc3sRKVbgOoQPD19tCNQ_Nu9fT0vYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

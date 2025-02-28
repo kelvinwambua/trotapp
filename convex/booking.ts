@@ -224,3 +224,96 @@ export const getUpcomingBookings = query({
         }));
     },
 });
+// Add this to your booking.ts file in the convex folder
+
+export const createBooking = mutation({
+  args: {
+    postId: v.id('posts'),
+    startDate: v.string(),
+    endDate: v.string(),
+    totalAmount: v.number(),
+    additionalRequests: v.optional(v.string()),
+    paymentMethod: v.string(),
+    transactionId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+    
+    const userId = identity.subject;
+    const user = await ctx.db
+      .query("users")
+      .filter(q => q.eq(q.field("clerkId"), userId))
+      .unique();
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Get the post to check if it's available and get owner details
+    const post = await ctx.db.get(args.postId);
+    
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    
+    if (post.status !== 'active') {
+      throw new Error("This car is not available for booking");
+    }
+    
+    // Create the booking
+    const bookingId = await ctx.db.insert("bookings", {
+      renterId: user._id,
+      ownerId: post.posterId,
+      postId: args.postId,
+      startDate: args.startDate,
+      endDate: args.endDate,
+      status: "confirmed",
+      totalAmount: args.totalAmount,
+      paymentStatus: "paid",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      additionalRequests: args.additionalRequests,
+      paymentMethod: args.paymentMethod,
+      transactionId: args.transactionId,
+    });
+    
+    // Create a transaction record
+    await ctx.db.insert("transactions", {
+      bookingId,
+      amount: args.totalAmount,
+      type: "booking_payment",
+      status: "completed",
+      createdAt: new Date().toISOString(),
+      paymentMethod: args.paymentMethod,
+      transactionId: args.transactionId,
+      payerId: user._id,
+      receiverId: post.posterId,
+      description: `Payment for ${post.carMake} ${post.carModel} rental`,
+    });
+    
+    // Create notifications for both parties
+    await ctx.db.insert("notifications", {
+      userId: user._id,
+      type: "booking_confirmed",
+      content: `Your booking for ${post.carMake} ${post.carModel} has been confirmed.`,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      relatedId: bookingId,
+    });
+    
+    await ctx.db.insert("notifications", {
+      userId: post.posterId,
+      type: "new_booking",
+      content: `${user.username || 'Someone'} has booked your ${post.carMake} ${post.carModel}.`,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      relatedId: bookingId,
+    });
+    
+    return bookingId;
+  },
+});

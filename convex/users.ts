@@ -34,6 +34,28 @@ export const getUserById = query({
     };
   },
 });
+export const getUserByClerkId = query({
+  args: {
+    clerkId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('clerkId'), args.clerkId))
+      .unique();
+
+    if (!user?.imageUrl || user.imageUrl.startsWith('http')) {
+      return user;
+    }
+
+    const url = await ctx.storage.getUrl(user.imageUrl as Id<'_storage'>);
+
+    return {
+      ...user,
+      imageUrl: url,
+    };
+  },
+});
 
 export const createUser = internalMutation({
   args: {
