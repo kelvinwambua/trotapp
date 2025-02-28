@@ -134,7 +134,9 @@ console.log(cars[0].image||"No Image")
             console.log(`Booking car with ID: ${selectedCar}`);
             router.push({
               pathname: `/book/[id]`,
-              params: { id: selectedCar } 
+              params: { id: selectedCar,
+                carData : JSON.stringify(selectedCarData)
+               } 
               })
           }}
         >
