@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 export const getRecentBookings = query({
     args: {
@@ -224,7 +225,6 @@ export const getUpcomingBookings = query({
         }));
     },
 });
-// Add this to your booking.ts file in the convex folder
 
 export const createBooking = mutation({
   args: {
@@ -253,7 +253,6 @@ export const createBooking = mutation({
       throw new Error("User not found");
     }
     
-    // Get the post to check if it's available and get owner details
     const post = await ctx.db.get(args.postId);
     
     if (!post) {
@@ -264,7 +263,7 @@ export const createBooking = mutation({
       throw new Error("This car is not available for booking");
     }
     
-    // Create the booking
+    
     const bookingId = await ctx.db.insert("bookings", {
       renterId: user._id,
       ownerId: post.posterId,
@@ -281,7 +280,7 @@ export const createBooking = mutation({
       transactionId: args.transactionId,
     });
     
-    // Create a transaction record
+    
     await ctx.db.insert("transactions", {
       bookingId,
       amount: args.totalAmount,
@@ -295,7 +294,7 @@ export const createBooking = mutation({
       description: `Payment for ${post.carMake} ${post.carModel} rental`,
     });
     
-    // Create notifications for both parties
+    
     await ctx.db.insert("notifications", {
       userId: user._id,
       type: "booking_confirmed",
@@ -313,6 +312,37 @@ export const createBooking = mutation({
       createdAt: new Date().toISOString(),
       relatedId: bookingId,
     });
+    
+
+    const renterTokens = await ctx.db
+      .query("pushTokens")
+      .filter(q => q.eq(q.field("userId"), user._id))
+      .collect();
+      
+    const ownerTokens = await ctx.db
+      .query("pushTokens")
+      .filter(q => q.eq(q.field("userId"), post.posterId))
+      .collect();
+    
+
+    for (const tokenObj of ownerTokens) {
+      await ctx.scheduler.runAfter(0, internal.push.sendPushNotification, {
+        pushToken: tokenObj.token,
+        messageTitle: "New Booking",
+        messageBody: `${user.username || 'Someone'} has booked your ${post.carMake} ${post.carModel}.`,
+        bookingId: post._id,
+      });
+    }
+    
+    
+    for (const tokenObj of renterTokens) {
+      await ctx.scheduler.runAfter(0, internal.push.sendPushNotification, {
+        pushToken: tokenObj.token,
+        messageTitle: "Booking Confirmed",
+        messageBody: `Your booking for ${post.carMake} ${post.carModel} has been confirmed.`,
+        bookingId: post._id,
+      });
+    }
     
     return bookingId;
   },

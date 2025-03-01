@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Id } from '@/convex/_generated/dataModel';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -21,32 +20,45 @@ export const usePush = () => {
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
   const router = useRouter();
-  const updateUser = useMutation(api.users.updateUser);
+  const storePushToken = useMutation(api.pushTokens.storePushToken);
   const { userProfile } = useUserProfile();
 
   useEffect(() => {
-    if (!Device.isDevice) return;
+    if (!Device.isDevice || !userProfile?._id) return;
+
     registerForPushNotificationsAsync()
       .then((token) => {
         if (token && userProfile?._id) {
-          updateUser({ pushToken: token, _id: userProfile?._id as Id<'users'> });
+          // Store token in the pushTokens table instead of updating user
+          storePushToken({
+            userId: userProfile._id,
+            token: token,
+            createdAt: new Date().toISOString(),
+          });
         }
       })
       .catch((error: any) => console.log('error', error));
 
-    // Recieved notification
+    // Received notification
     notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-      console.log('recieved notification', notification);
+      console.log('received notification', notification);
     });
 
     // Tapped on notification
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      const threadId = response.notification.request.content.data.threadId;
-      console.log(
-        '🚀 ~ responseListener.current=Notifications.addNotificationResponseReceivedListener ~ threadId:',
-        threadId
-      );
-      router.push('/(auth)/(messages)/chat');
+      const data = response.notification.request.content.data;
+      
+      // Handle different notification types
+      if (data.bookingId) {
+        router.push(`/(auth)/(profile)/bookings`);
+      } else if (data.threadId) {
+        router.push('/(auth)/(messages)/chat');
+      } else if (data.postId) {
+        router.push(`/(auth)/(profile)/bookings`);
+      } else {
+        // Default route for other notifications
+        router.push('/(auth)/(profile)/bookings');
+      }
     });
 
     return () => {
@@ -58,8 +70,8 @@ export const usePush = () => {
   }, [userProfile?._id]);
 
   function handleRegistrationError(errorMessage: string) {
-    alert(errorMessage);
-    throw new Error(errorMessage);
+    console.error(errorMessage);
+    return null;
   }
 
   async function registerForPushNotificationsAsync() {
@@ -80,27 +92,29 @@ export const usePush = () => {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') {
-        handleRegistrationError('Permission not granted to get push token for push notification!');
-        return;
+        return handleRegistrationError('Permission not granted for push notifications');
       }
+      
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      
       if (!projectId) {
-        handleRegistrationError('Project ID not found');
+        return handleRegistrationError('Project ID not found');
       }
+      
       try {
         const pushTokenString = (
           await Notifications.getExpoPushTokenAsync({
             projectId,
           })
         ).data;
-        console.log(pushTokenString);
+        console.log('Push token obtained:', pushTokenString);
         return pushTokenString;
       } catch (e: unknown) {
-        handleRegistrationError(`${e}`);
+        return handleRegistrationError(`Error getting push token: ${e}`);
       }
     } else {
-      handleRegistrationError('Must use physical device for push notifications');
+      return handleRegistrationError('Must use physical device for push notifications');
     }
   }
 };

@@ -1,5 +1,7 @@
+import { usePush } from '@/hooks/usePush';
 import { Stack } from 'expo-router';
 const Layout = () => {
+   usePush()
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

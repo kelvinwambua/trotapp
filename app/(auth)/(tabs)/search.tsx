@@ -572,7 +572,7 @@ const CarCard: React.FC<CarCardProps> = ({ car, index, router, userId, onToggleS
         style={styles.carCard}
         onPress={() =>
           router.push({
-            pathname: '/(auth)/(profile)/car-details/[id]',
+            pathname: '/(auth)/book/[id]',
             params: { id: car._id },
           })
         }

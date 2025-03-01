@@ -1,5 +1,3 @@
-// [id].tsx with fixed TypeScript errors
-
 import { useLocalSearchParams, router } from 'expo-router';
 import { Stack } from 'expo-router';
 import * as React from 'react'; // Fixed React import
@@ -34,7 +32,7 @@ import { useMutation, useQuery } from 'convex/react';
 
 const { width, height } = Dimensions.get('window');
 
-// Define proper types for the carousel
+
 interface ImageCarouselProps {
   images: string[];
 }
@@ -56,7 +54,17 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   };
 
   return (
+    <>
+          <Stack.Screen
+        options={{
+          headerShown: true,
+          title: 'Find Your Perfect Car',
+          headerTitleStyle: styles.headerTitle,
+          headerShadowVisible: false,
+        }}
+      />
     <View style={styles.carouselContainer}>
+      
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -88,6 +96,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         ))}
       </View>
     </View>
+    </>
   );
 };
 
@@ -96,6 +105,24 @@ interface PaymentData {
   status: string;
   transaction_id?: string;
   payment_type?: string;
+}
+
+interface FlutterwaveConfig {
+  tx_ref: string;
+  authorization: string;
+  amount: number;
+  currency: string;
+  customer: {
+    email: string;
+    phonenumber: string;
+    name: string;
+  };
+  payment_options: string;
+  customizations: {
+    title: string;
+    description: string;
+    logo: string;
+  };
 }
 
 export default function BookingScreen() {
@@ -109,7 +136,6 @@ export default function BookingScreen() {
     DMSans_700Bold,
   });
   
-  // State for booking details
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(addDays(new Date(), 3));
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -150,29 +176,31 @@ export default function BookingScreen() {
   };
   
  
-  const paymentConfig = {
+  const paymentConfig: FlutterwaveConfig = {
     tx_ref: generateTransactionRef(),
     authorization: 'FLWPUBK_TEST-2fea7362a78407ae0ed7d145e2e09b5c-X',
     amount: totalAmount,
     currency: 'KES',
     customer: {
-      email: user?.primaryEmailAddress?.emailAddress,
+      email: user?.primaryEmailAddress?.emailAddress || '',
       phonenumber: '254712345678',
-      name: user?.fullName,
+      name: user?.fullName || '',
     },
     payment_options: 'card,mpesa,ussd',
     customizations: {
       title: `${carDetails?.carMake} ${carDetails?.carModel} Booking`,
       description: `Rental payment for ${rentalDays} days`,
-      logo: user?.imageUrl,
+      logo: user?.imageUrl||'', 
     },
   };
-
 
   const handlePaymentSuccess = async (data: PaymentData) => {
     try {
       setIsLoading(true);
       
+      if (!data.transaction_id) {
+        throw new Error('No transaction ID received');
+      }
 
       const booking = await createBooking({
         postId: id as Id<"posts">,
@@ -184,19 +212,31 @@ export default function BookingScreen() {
         transactionId: data.transaction_id,
       });
       
+      if (!booking) {
+        throw new Error('Failed to create booking');
+      }
+
       Alert.alert(
         'Booking Successful',
         'Your car rental has been booked successfully!',
-        [{ text: 'OK', onPress: () => router.push('/(auth)/(tabs)/bookings') }]
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            setIsLoading(false);
+            router.push('/(auth)/(tabs)/bookings');
+          }
+        }]
       );
     } catch (error) {
-      Alert.alert('Error', 'There was an error processing your booking. Please try again.');
-      console.error('Booking error:', error);
-    } finally {
       setIsLoading(false);
+      Alert.alert(
+        'Error',
+        'There was an error processing your booking. Please try again.',
+        [{ text: 'OK' }]
+      );
+      console.error('Booking error:', error);
     }
   };
-  
   const handlePaymentError = (error: unknown) => {
     Alert.alert('Payment Failed', 'There was an error processing your payment. Please try again.');
     console.error('Payment error:', error);
@@ -218,19 +258,20 @@ export default function BookingScreen() {
   return (
     <>
       <StatusBar barStyle="light-content" />
-      <Stack.Screen options={{ 
-        headerShown: false,
-        animation: 'slide_from_right'
-      }} />
+      <Stack.Screen
+  options={{
+    headerShown: true,
+    headerTitle: () => (
+      <Text style={styles.headerTitle}>
+        Book {carDetails.carMake} {carDetails.carModel}
+      </Text>
+    ),
+    headerShadowVisible: false,
+  }}
+/>
 
       <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#1A1A1A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Book {carDetails.carMake} {carDetails.carModel}</Text>
-          <View style={{width: 24}} />
-        </View>
+        
 
         <ScrollView showsVerticalScrollIndicator={false}>
    
