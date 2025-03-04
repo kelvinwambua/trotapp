@@ -119,7 +119,7 @@ export default function MessagesScreen() {
             router.push('/(auth)/(messages)/chat')
           }} key={message.id} style={styles.messageBox}>
             <View style={styles.Left}>
-              <MaterialIcons size={60} name='account-circle' />
+              <MaterialIcons size={50} name='account-circle' color={"#8c8e9b"} style={styles.icon}/>
               <View style={styles.text}>
                 <Text style={styles.username}>{message.sender}</Text>
                 <Text style={styles.userTxt}>{message.text}</Text>
@@ -127,7 +127,7 @@ export default function MessagesScreen() {
             </View>
             <View style={styles.Right}>
               <Text style={styles.time}>10:13</Text>
-              {message.unread && <MaterialIcons size={30} name='notifications-on' color={'#007AFF'} />}
+              {message.unread && <MaterialIcons size={10} name='circle' color={'#007AFF'}  />}
             </View>
           </TouchableOpacity>
         ))}
@@ -151,6 +151,9 @@ const styles = StyleSheet.create({
       width:'100%',
       // padding:5
   },
+  icon:{
+    marginRight:20,
+  },
   messageBox:{
       flexDirection:'row',
       height:80,
@@ -172,7 +175,9 @@ const styles = StyleSheet.create({
   },
   userTxt:{
     fontSize:12,
-    fontFamily:'DMSans_700Bold'
+    padding: 3,
+    fontFamily:'DMSans_700',
+    color: "#8c8e9b",
   },
   Left:{
     flexDirection:'row',
@@ -182,10 +187,10 @@ const styles = StyleSheet.create({
     justifyContent:'flex-end'
   },
   filter:{
-    borderRadius:15,
+    borderRadius:10,
     backgroundColor:'#007AFF',
-    height:30,
-    padding:6,
+    height:40,
+    padding:9,
     justifyContent:'center',
     alignItems:'center',
     
@@ -197,9 +202,10 @@ const styles = StyleSheet.create({
 
   },
   filterTxt:{
-      fontSize:16,
+      fontSize:15,
       fontFamily:'DMSans_700Bold',
-      color:'white'
+      color:'white',
+  
 
   },
   upperBar:{
@@ -220,13 +226,13 @@ const styles = StyleSheet.create({
   searchBar:{
       width:'80%',
       height:40,
-      backgroundColor:'grey',
+      backgroundColor:'#e0e0e0',
       borderRadius:16,
       flexDirection:'row',
       justifyContent:'space-between',
       alignItems:'center',
       padding:5,
-      margin:10
+      margin:20
   },
   modalContainer: {
     flex: 1,

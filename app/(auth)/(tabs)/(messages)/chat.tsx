@@ -79,7 +79,7 @@ export default function ChatScreen() {
 
       <View style={styles.inputContainer}>
         <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
-          <MaterialIcons name="photo" size={24} color="#007AFF" />
+          <MaterialIcons name="add" size={30} color="#007AFF" />
         </TouchableOpacity>
         <TextInput
           style={styles.input}
@@ -89,7 +89,7 @@ export default function ChatScreen() {
           onChangeText={setNewMessage}
         />
         <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <MaterialIcons name='send' size={24} color={'#FFF'} />
+          <MaterialIcons name='send' size={24} color={'#007AFF'} />
         </TouchableOpacity>
       </View>
     </View>
@@ -128,6 +128,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 20,
     marginVertical: 5,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+
   },
   senderBubble: {
     alignSelf: 'flex-start',
@@ -166,6 +172,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, 
     borderColor: '#EEE'
   },
+  iconButton:{
+    marginRight: 10
+
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,7 +194,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     marginLeft: 10,
-    backgroundColor: '#007AFF',
+    backgroundColor: 'white',
     borderRadius: 20,
     padding: 10,
   },
