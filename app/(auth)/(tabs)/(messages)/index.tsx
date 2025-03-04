@@ -45,11 +45,11 @@ export default function MessagesScreen() {
     <View style={styles.container}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={styles.searchBar}>
-          <MaterialIcons name='search' size={15} />
-          <TextInput style={{ width: '90%' }} placeholder='Search messages' value={searchQuery} onChangeText={setSearchQuery} />
+          <MaterialIcons name='search' size={20} color={"#8c8e9b"}/>
+          <TextInput style={{ width: '93%' }} placeholder='Search messages' value={searchQuery} onChangeText={setSearchQuery} />
         </View>
         <TouchableOpacity onPress={() => setFilterModalVisible(true)} style={styles.notifications}>
-          <MaterialIcons name='notification-important' size={40} color={'#007AFF'} />
+          <MaterialIcons name='notification-important' size={35} color={'#007AFF'} />
         </TouchableOpacity>
       </View>
 
@@ -212,7 +212,8 @@ const styles = StyleSheet.create({
     flexDirection:'row'
   },
   notifications:{
-    position:'relative'
+    marginBottom: 20,
+
   },
   notificationNumber:{
     position:'absolute',
@@ -224,15 +225,16 @@ const styles = StyleSheet.create({
       fontFamily:'DMSans_700Bold'
   },
   searchBar:{
-      width:'80%',
+      width:'90%',
       height:40,
       backgroundColor:'#e0e0e0',
       borderRadius:16,
       flexDirection:'row',
       justifyContent:'space-between',
       alignItems:'center',
-      padding:5,
-      margin:20
+      padding:10,
+      marginBottom: 20,
+      marginRight:10
   },
   modalContainer: {
     flex: 1,
