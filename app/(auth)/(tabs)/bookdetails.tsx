@@ -44,20 +44,17 @@ const BookingDetails = () => {
       <View style={styles.card}>
         <Text style={styles.dateText}>{formatDate(defaultBooking.startDate)} - {formatDate(defaultBooking.endDate)}</Text>
         
-        {/* Rental Rules */}
         <Text style={styles.heading}>Rental Rules</Text>
         {defaultCar.rules.map((rule, index) => (
           <Text key={index} style={styles.ruleText}>• {rule}</Text>
         ))}
         
-        {/* Days & Rent Remaining */}
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>Days Remaining: <Text style={styles.bold}>{daysRemaining}</Text></Text>
           <Text style={styles.infoText}>Remaining Rent: <Text style={styles.bold}>${remainingAmount.toFixed(2)}</Text></Text>
         </View>
       </View>
       
-      {/* Mapbox Location */}
       <View style={styles.mapContainer}>
         <MapView style={styles.map}>
           <Camera centerCoordinate={[defaultCar.location.longitude, defaultCar.location.latitude]} zoomLevel={14} />
@@ -69,16 +66,57 @@ const BookingDetails = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "white" },
-  carImage: { width: "100%", height: 220, borderRadius: 12, marginBottom: 12 },
-  card: { backgroundColor: "grey", padding: 16, borderRadius: 12, marginBottom: 16 },
-  dateText: { fontSize: 18, fontWeight: "bold", color: "#fff", marginBottom: 10 },
-  heading: { fontSize: 16, fontWeight: "bold", color: "#fff", marginBottom: 6 },
-  ruleText: { fontSize: 14, color: "#BBB", marginBottom: 4 },
-  infoBox: { marginTop: 12 },
-  infoText: { fontSize: 16, color: "#fff", marginBottom: 6 },
-  bold: { fontWeight: "bold", color: "#FFD700" },
-  mapContainer: { height: 200, borderRadius: 12, overflow: "hidden" },
+  container: { 
+    flex: 1,
+    padding: 16, 
+    backgroundColor: "white"
+ },
+  carImage: { 
+    width: "100%", 
+    height: 220, 
+    borderRadius: 12, 
+    marginBottom: 12 
+},
+  card: {
+    backgroundColor: "grey", 
+    padding: 16, 
+    borderRadius: 12, 
+    marginBottom: 16 
+    },
+  dateText: {
+    fontSize: 18,
+    fontWeight: "bold", 
+    color: "#fff", 
+    marginBottom: 10 
+},
+  heading: { 
+    fontSize: 16, 
+    fontWeight: "bold", 
+    color: "#fff", 
+    marginBottom: 6 
+},
+  ruleText: { 
+    fontSize: 14, 
+    color: "#BBB", 
+    marginBottom: 4
+ },
+  infoBox: { 
+    marginTop: 12
+ },
+  infoText: { 
+    fontSize: 16, 
+    color: "#fff", 
+    marginBottom: 6 
+ },
+  bold: { 
+    fontWeight: "bold", 
+    color: "#FFD700" 
+ },
+  mapContainer: { 
+    height: 200, 
+    borderRadius: 12, 
+    overflow: "hidden"
+ },
   map: { flex: 1 },
 });
 
