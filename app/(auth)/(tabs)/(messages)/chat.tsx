@@ -6,27 +6,41 @@ import * as ImagePicker from 'expo-image-picker'
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState([
-    { id: 1, sender: 'Sammy', text: 'Hey there!', isUser: false },
-    { id: 2, sender: 'You', text: 'Hi Sammy! How’s it going?', isUser: true },
-    { id: 3, sender: 'Sammy', text: 'I wanted to ask about the car rental.', isUser: false },
-    { id: 4, sender: 'You', text: 'Sure! What do you need to know?', isUser: true },
+    { id: 1, sender: 'Sammy', text: 'Hey there!', isUser: false,time:'10:00AM' },
+    { id: 2, sender: 'You', text: 'Hi Sammy! How’s it going?', isUser: true, time:'10:04AM' },
+    { id: 3, sender: 'Sammy', text: 'I wanted to ask about the car rental.', isUser: false,time:'10:10AM' },
+    { id: 4, sender: 'You', text: 'Sure! What do you need to know?', isUser: true,time:'10:12AM' },
   ]);
   
   const [newMessage, setNewMessage] = useState('');
   const [image,setImage]=useState(null);
+  const [editingMessage,setEditingMessage]=useState(null)
+  const [replyingTo,setReplyingTo]= useState(null)
 
   const sendMessage = () => {
+
+    const currentTime=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     if (newMessage.trim().length === 0) return; 
-
-    const newMsg = {
-      id: messages.length + 1,
-      sender: 'You',
-      text: newMessage,
-      isUser: true,
-      image:image
-    };
-
+    
+    if(editingMessage){
+      setMessages(messages.map(msg=>msg.id===editingMessage.id? { ...msg, text: newMessage,time:currentTime }:msg))
+      setEditingMessage(null)
+    }else{
+      const newMsg = {
+        id: messages.length + 1,
+        sender: 'You',
+        text: newMessage,
+        isUser: true,
+        image:image,
+        time:currentTime,
+        replyTo:replyingTo? replyingTo.text:null
+      };
     setMessages([...messages, newMsg]); 
+
+    }
+
+    
+
     setNewMessage('');
     setImage(null) 
   };
@@ -44,6 +58,15 @@ export default function ChatScreen() {
     }
   };
 
+  const startEditing=(message)=>{
+    setEditingMessage(message);
+    setNewMessage(message.text)
+  }
+
+  const startReplying=(message)=>{
+    setReplyingTo(message)
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -55,18 +78,38 @@ export default function ChatScreen() {
 
       <ScrollView style={styles.chatContainer}>
         {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.messageBubble,
-              message.isUser ? styles.userBubble : styles.senderBubble
-            ]}
-          >
-            {message.text ? <Text style={message.isUser ? styles.senderMsgTxt : styles.receiverMsgText}>{message.text}</Text> : null}
-            {message.image && <Image source={{ uri: message.image }} style={styles.image} />}
-          </View>
+          <TouchableOpacity onPress={()=>startReplying(message)}>
+            <View
+              key={message.id}
+              style={[
+                styles.messageBubble,
+                message.isUser ? styles.userBubble : styles.senderBubble
+              ]}
+            >
+              {message.replyTo && <Text style={styles.replyText}>Replying to:{message.reply}</Text>}
+              {message.text ? <Text style={message.isUser ? styles.senderMsgTxt : styles.receiverMsgText}>{message.text}</Text> : null}
+              {message.image && <Image source={{ uri: message.image }} style={styles.image} />}
+              <Text style={styles.timeTxt}>{message.time}</Text>
+              {message.isUser &&(
+                <TouchableOpacity onPress={()=> startEditing(message)}>
+                  <MaterialIcons name='edit' size={20} color={'white'}></MaterialIcons>
+                </TouchableOpacity>
+              )}
+            </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {replyingTo &&(
+        <View style={styles.replyingPreview}>
+          <Text style={styles.replyText}> Replying to:{replyingTo.text}</Text>
+          <TouchableOpacity onPress={()=>setReplyingTo(null)}>
+            <MaterialIcons name='cancel' size={20} color={'red'}></MaterialIcons>
+          </TouchableOpacity>
+        </View>
+      )
+
+      }
 
       {image && (
         <View style={styles.imagePreview}>
@@ -170,6 +213,25 @@ const styles = StyleSheet.create({
     padding: 10, 
     backgroundColor: '#FFF', 
     borderTopWidth: 1, 
+    borderColor: '#EEE'
+  },
+  timeTxt:{
+    alignSelf: 'flex-end',
+    fontSize: 12,
+    color: 'white',
+    marginTop: 5,
+  },
+  replyText: {
+    fontSize: 14,
+    color: 'grey',
+    fontStyle: 'italic',
+  },
+  replyPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
     borderColor: '#EEE'
   },
   iconButton:{
