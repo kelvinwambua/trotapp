@@ -12,7 +12,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/3c06083a-ed72-4bd5-9a50-e71641c050f2"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ivy.trotapp"
@@ -35,23 +41,23 @@
       "expo-font",
       "expo-secure-store",
       [
-                "@rnmapbox/maps",
-                {
-                  "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoia2Vsdmlud2FtYnVhc3llbmdvIiwiYSI6ImNtMzVyZW1pNjA3MXAyaXF5eDA4NnFnZTkifQ.M9kqRHZYlL4HMo_bWPbZNA"
-  }],
-  
-  [
-    "expo-image-picker",
-    {
-      "photosPermission": "The app accesses your photos to let you share them with your friends."
-    }
-  ],
-  [
-    "expo-location",
-    {
-      "locationWhenInUsePermission": "Show current location on map."
-    }
-  ]
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.eyJ1Ijoia2Vsdmlud2FtYnVhc3llbmdvIiwiYSI6ImNtMzVyZW1pNjA3MXAyaXF5eDA4NnFnZTkifQ.M9kqRHZYlL4HMo_bWPbZNA"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Show current location on map."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

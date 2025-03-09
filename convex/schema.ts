@@ -166,6 +166,27 @@ export const PushToken = {
   token: v.string(),
   createdAt: v.string(),
 };
+export const CarTracking = {
+  bookingId: v.id('bookings'),
+  lastLocation: v.object({
+    latitude: v.number(),
+    longitude: v.number(),
+    timestamp: v.number(),
+  }),
+  locationHistory: v.array(v.object({
+    latitude: v.number(),
+    longitude: v.number(),
+    timestamp: v.number(),
+  })),
+  activeSharing: v.boolean(),
+  consentGranted: v.boolean(),
+  lastUpdateRequest: v.optional(v.number()),
+  trackingSettings: v.optional(v.object({
+    updateFrequency: v.optional(v.number()),
+    privacyMode: v.optional(v.string()),
+    geofenceRadius: v.optional(v.number()),
+  })),
+};
 
 
 
@@ -226,4 +247,7 @@ export default defineSchema({
   .index('byDate', ['date'])
   .index('byStatus', ['status'])
   .index('byType', ['type']),
+  carTracking: defineTable(CarTracking)
+  .index('byBookingId', ['bookingId'])
+  .index('byActiveSharing', ['activeSharing']),
 });

@@ -57,6 +57,12 @@ const ProfileScreen = () => {
 
   const accountItems = [
     {
+      id: 'track',
+      title: 'Track Your Vehicles',
+      icon: 'radar',
+      status: 'Tracking'
+    },
+    {
       id: 'identity',
       title: 'Identity Verification',
       icon: 'shield-check-outline',

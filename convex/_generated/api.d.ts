@@ -22,6 +22,7 @@ import type * as post from "../post.js";
 import type * as push from "../push.js";
 import type * as pushTokens from "../pushTokens.js";
 import type * as subaccounts from "../subaccounts.js";
+import type * as tracking from "../tracking.js";
 import type * as users from "../users.js";
 
 /**
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   push: typeof push;
   pushTokens: typeof pushTokens;
   subaccounts: typeof subaccounts;
+  tracking: typeof tracking;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
