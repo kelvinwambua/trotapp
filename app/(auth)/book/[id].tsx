@@ -259,18 +259,17 @@ export default function BookingScreen() {
     <>
       <StatusBar barStyle="light-content" />
       <Stack.Screen
-  options={{
-    headerShown: true,
-    headerTitle: () => (
-      <Text style={styles.headerTitle}>
-        Book {carDetails.carMake} {carDetails.carModel}
-      </Text>
-    ),
-    headerShadowVisible: false,
-  }}
-/>
-
-      <View style={styles.container}>
+        options={{
+          headerShown: true,
+          headerTitle: () => (
+            <Text style={styles.headerTitle}>
+              Book {carDetails.carMake} {carDetails.carModel}
+            </Text>
+          ),
+          headerShadowVisible: false,
+        }}
+      />
+    <View style={styles.container}>
         
 
         <ScrollView showsVerticalScrollIndicator={false}>

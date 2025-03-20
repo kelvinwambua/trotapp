@@ -1,43 +1,115 @@
-
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, FlatList, Image, ActivityIndicator, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { formatDistanceToNow } from 'date-fns';
 import { router } from 'expo-router';
 import { Id } from '@/convex/_generated/dataModel';
+import MessagesScreen from './MessagesScreen';  // Import your existing MessagesScreen
 
-const MessagesScreen = () => {
+// Define notification types
+type NotificationType = 'post_liked' | 'post_commented' | 'booking_request' | 'booking_approved' | 
+  'booking_rejected' | 'user_followed' | 'message_received' | 'payment_received' | 'payment_requested';
+
+// Define related entity types
+type RelatedEntity = {
+  type: 'post' | 'user' | 'booking' | 'message';
+  title?: string;
+  name?: string;
+  imageUrl?: string;
+  dates?: string;
+  status?: string;
+  carDetails?: string | null;
+  sender?: string | null;
+  preview?: string;
+};
+
+// Define notification interface
+interface Notification {
+  _id: Id<'notifications'>;
+  userId: Id<'users'>;
+  type: NotificationType;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  relatedId?: Id<'posts' | 'users' | 'bookings' | 'messages'>;
+  priority: 'low' | 'normal' | 'high';
+  actionUrl?: string;
+  expiresAt?: string;
+  relatedEntity?: RelatedEntity | null;
+}
+
+const NotificationsTabScreen = () => {
   const { isLoaded, isSignedIn, user } = useUser();
   const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState<'messages' | 'notifications'>('messages');
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
   });
 
-  
   const convexUser = useQuery(api.users.current);
-  const chatThreads = useQuery(
-    api.messages.getUserChatThreads, 
+  const notifications = useQuery(
+    api.notifications.getUserNotifications,
     convexUser?._id ? { userId: convexUser._id } : "skip"
   );
-  const unreadCount = useQuery(api.messages.getUnreadMessageCount);
+  const unreadNotificationCount = useQuery(
+    api.notifications.getUnreadNotificationCount,
+    convexUser?._id ? { userId: convexUser._id } : "skip"
+  );
 
-  const navigateToChat = useCallback((threadId: Id<"chats">) => {
-    router.push({
-      pathname: "/(messages)/[id]",
-      params: { id: threadId }
-    });
-  }, []);
+  const markNotificationRead = useMutation(api.notifications.markNotificationRead);
+  const markAllNotificationsRead = useMutation(api.notifications.markAllNotificationsRead);
 
-  const navigateToNewMessage = useCallback(() => {
-    // router.push("/(auth)/(tabs)/messages/new");
-  }, []);
+  const handleNotificationPress = useCallback((notification: Notification) => {
+    // Mark notification as read
+    markNotificationRead({ notificationId: notification._id });
+
+    // Navigate based on notification type
+    if (notification.actionUrl) {
+      // Handle custom action URL
+      router.push(notification.actionUrl);
+    } else if (notification.relatedEntity) {
+      // Navigate based on related entity type
+      switch (notification.relatedEntity.type) {
+        case 'post':
+          router.push({
+            pathname: "/(tabs)/profile",
+            params: { id: notification.relatedId }
+          });
+          break;
+        case 'user':
+          router.push({
+            pathname: "/(auth)/(profile)/",
+            params: { id: notification.relatedId }
+          });
+          break;
+        case 'booking':
+          router.push({
+            pathname: "/(auth)/(profile)/",
+            params: { id: notification.relatedId }
+          });
+          break;
+        case 'message':
+          router.push({
+            pathname: "/(messages)/[id]",
+            params: { id: notification.relatedId! }
+          });
+          break;
+      }
+    }
+  }, [markNotificationRead]);
+
+  const handleMarkAllRead = useCallback(() => {
+    if (convexUser?._id) {
+      markAllNotificationsRead({ userId: convexUser._id });
+    }
+  }, [convexUser, markAllNotificationsRead]);
 
   if (!isLoaded || !isSignedIn || !fontsLoaded) {
     return (
@@ -47,58 +119,82 @@ const MessagesScreen = () => {
     );
   }
 
-  const renderChatThread = ({ item }) => {
-    const otherUser = item.otherParticipants[0];
-    const lastMessage = item.latestMessage?.content || 'Start a conversation';
-    const lastMessageTime = item.latestMessage?.timestamp 
-      ? formatDistanceToNow(new Date(item.latestMessage.timestamp), { addSuffix: true })
-      : 'Just now';
+  // Render a notification item
+  const renderNotificationItem = ({ item }: { item: Notification }) => {
+    const timeAgo = formatDistanceToNow(new Date(item.createdAt), { addSuffix: true });
+    
+    // Determine icon based on notification type
+    let iconName = 'bell-outline';
+    let iconColor = '#007AFF';
+    
+    if (item.type.includes('post')) {
+      iconName = 'post-outline';
+    } else if (item.type.includes('booking')) {
+      iconName = 'calendar-check-outline';
+      if (item.type === 'booking_approved') {
+        iconColor = '#34C759';
+      } else if (item.type === 'booking_rejected') {
+        iconColor = '#FF3B30';
+      }
+    } else if (item.type.includes('message')) {
+      iconName = 'chat-outline';
+    } else if (item.type.includes('payment')) {
+      iconName = 'currency-usd';
+      iconColor = '#30B634';
+    } else if (item.type.includes('user')) {
+      iconName = 'account-outline';
+    }
     
     return (
       <TouchableOpacity 
-        style={styles.chatThreadItem}
-        onPress={() => navigateToChat(item._id)}
+        style={[
+          styles.notificationItem,
+          item.isRead ? styles.notificationRead : styles.notificationUnread
+        ]}
+        onPress={() => handleNotificationPress(item)}
         activeOpacity={0.7}
       >
-        <View style={styles.avatarContainer}>
-          {otherUser?.imageUrl ? (
-            <Image 
-              source={{ uri: otherUser.imageUrl }} 
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarInitial}>
-                {otherUser?.firstName?.[0] || otherUser?.username?.[0] || '?'}
-              </Text>
-            </View>
-          )}
-          {item.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unreadCount}</Text>
-            </View>
-          )}
+        <View style={[styles.notificationIcon, { backgroundColor: `${iconColor}15` }]}>
+          <MaterialCommunityIcons name={iconName as any} size={24} color={iconColor} />
         </View>
         
-        <View style={styles.threadContent}>
-          <View style={styles.threadHeader}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {otherUser?.firstName && otherUser?.lastName 
-                ? `${otherUser.firstName} ${otherUser.lastName}`
-                : otherUser?.username || 'Unknown User'}
-            </Text>
-            <Text style={styles.timeText}>{lastMessageTime}</Text>
-          </View>
-          <Text 
-            style={[
-              styles.messagePreview,
-              item.unreadCount > 0 && styles.unreadMessagePreview
-            ]}
-            numberOfLines={1}
-          >
-            {lastMessage}
-          </Text>
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationText}>{item.content}</Text>
+          
+          {item.relatedEntity && (
+            <View style={styles.relatedEntityContainer}>
+              {item.relatedEntity.imageUrl && (
+                <Image 
+                  source={{ uri: item.relatedEntity.imageUrl }} 
+                  style={styles.relatedEntityImage} 
+                />
+              )}
+              
+              {item.relatedEntity.type === 'post' && item.relatedEntity.title && (
+                <Text style={styles.relatedEntityText}>{item.relatedEntity.title}</Text>
+              )}
+              
+              {item.relatedEntity.type === 'booking' && item.relatedEntity.dates && (
+                <Text style={styles.relatedEntityText}>
+                  {item.relatedEntity.carDetails && `${item.relatedEntity.carDetails} • `}
+                  {item.relatedEntity.dates}
+                </Text>
+              )}
+              
+              {item.relatedEntity.type === 'message' && item.relatedEntity.preview && (
+                <Text style={styles.relatedEntityText} numberOfLines={1}>
+                  {item.relatedEntity.preview}
+                </Text>
+              )}
+            </View>
+          )}
+          
+          <Text style={styles.timeText}>{timeAgo}</Text>
         </View>
+        
+        {!item.isRead && (
+          <View style={styles.unreadIndicator} />
+        )}
       </TouchableOpacity>
     );
   };
@@ -106,39 +202,92 @@ const MessagesScreen = () => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerTitle}>
+          {activeTab === 'messages' ? 'Messages' : 'Notifications'}
+        </Text>
+        
+        {activeTab === 'notifications' && notifications && notifications.length > 0 && (
+          <TouchableOpacity 
+            style={styles.markAllReadButton}
+            onPress={handleMarkAllRead}
+          >
+            <Text style={styles.markAllReadText}>Mark all read</Text>
+          </TouchableOpacity>
+        )}
+        
+        {activeTab === 'messages' && (
+          <TouchableOpacity 
+            style={styles.newMessageButton}
+            onPress={() => {/* Navigate to new message */}}
+          >
+            <MaterialCommunityIcons name="pencil" size={22} color="#007AFF" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.tabsContainer}>
         <TouchableOpacity 
-          style={styles.newMessageButton}
-          onPress={navigateToNewMessage}
+          style={[
+            styles.tab, 
+            activeTab === 'messages' && styles.activeTab
+          ]}
+          onPress={() => setActiveTab('messages')}
         >
-          <MaterialCommunityIcons name="pencil" size={22} color="#007AFF" />
+          <Text style={[
+            styles.tabText,
+            activeTab === 'messages' && styles.activeTabText
+          ]}>
+            Messages
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[
+            styles.tab, 
+            activeTab === 'notifications' && styles.activeTab
+          ]}
+          onPress={() => setActiveTab('notifications')}
+        >
+          <Text style={[
+            styles.tabText,
+            activeTab === 'notifications' && styles.activeTabText
+          ]}>
+            Notifications
+          </Text>
+          {unreadNotificationCount && unreadNotificationCount.count > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadNotificationCount.count > 99 ? '99+' : unreadNotificationCount.count}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
-      {chatThreads === undefined ? (
-        <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : chatThreads.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons name="chat-outline" size={60} color="#CCCCCC" />
-          <Text style={styles.emptyText}>No messages yet</Text>
-          <Text style={styles.emptySubtext}>Start a conversation with someone</Text>
-          <TouchableOpacity 
-            style={styles.newChatButton}
-            onPress={navigateToNewMessage}
-          >
-            <Text style={styles.newChatButtonText}>New Message</Text>
-          </TouchableOpacity>
-        </View>
+      {activeTab === 'messages' ? (
+        <MessagesScreen />
       ) : (
-        <FlatList
-          data={chatThreads}
-          renderItem={renderChatThread}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          {notifications === undefined ? (
+            <View style={styles.loadingContent}>
+              <ActivityIndicator size="large" color="#007AFF" />
+            </View>
+          ) : notifications.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="bell-outline" size={60} color="#CCCCCC" />
+              <Text style={styles.emptyText}>No notifications</Text>
+              <Text style={styles.emptySubtext}>You're all caught up!</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={notifications}
+              renderItem={renderNotificationItem}
+              keyExtractor={(item) => item._id}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </>
       )}
     </View>
   );
@@ -161,8 +310,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
   },
   headerTitle: {
@@ -178,6 +325,60 @@ const styles = StyleSheet.create({
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  markAllReadButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F0F8FF',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markAllReadText: {
+    fontSize: 12,
+    fontFamily: 'DMSans_500Medium',
+    color: '#007AFF',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#007AFF',
+  },
+  tabText: {
+    fontSize: 16,
+    fontFamily: 'DMSans_500Medium',
+    color: '#8E8E93',
+  },
+  activeTabText: {
+    color: '#007AFF',
+    fontFamily: 'DMSans_700Bold',
+  },
+  notificationBadge: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  notificationBadgeText: {
+    fontSize: 12,
+    fontFamily: 'DMSans_700Bold',
+    color: '#FFF',
+    paddingHorizontal: 4,
   },
   loadingContent: {
     flex: 1,
@@ -201,28 +402,11 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_400Regular',
     color: '#666',
     marginTop: 8,
-    marginBottom: 24,
-  },
-  newChatButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  newChatButtonText: {
-    fontSize: 16,
-    fontFamily: 'DMSans_700Bold',
-    color: '#FFF',
   },
   listContent: {
     padding: 16,
   },
-  chatThreadItem: {
+  notificationItem: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
     borderRadius: 18,
@@ -234,73 +418,62 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  avatarContainer: {
-    position: 'relative',
+  notificationUnread: {
+    backgroundColor: '#F0F8FF',
+  },
+  notificationRead: {
+    backgroundColor: '#FFF',
+  },
+  notificationIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  avatarPlaceholder: {
-    backgroundColor: '#E1E1E1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    fontSize: 22,
-    fontFamily: 'DMSans_700Bold',
-    color: '#888',
-  },
-  unreadBadge: {
-    position: 'absolute',
-    right: -4,
-    top: -4,
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  unreadText: {
-    fontSize: 12,
-    fontFamily: 'DMSans_700Bold',
-    color: '#FFF',
-    paddingHorizontal: 4,
-  },
-  threadContent: {
+  notificationContent: {
     flex: 1,
     justifyContent: 'center',
   },
-  threadHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  notificationText: {
+    fontSize: 15,
+    fontFamily: 'DMSans_500Medium',
+    color: '#1A1A1A',
+    flexWrap: 'wrap',
     marginBottom: 6,
   },
-  userName: {
-    fontSize: 16,
-    fontFamily: 'DMSans_700Bold',
-    color: '#1A1A1A',
+  relatedEntityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  relatedEntityImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  relatedEntityText: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
     flex: 1,
-    paddingRight: 8,
   },
   timeText: {
     fontSize: 12,
     fontFamily: 'DMSans_400Regular',
     color: '#8E8E93',
   },
-  messagePreview: {
-    fontSize: 14,
-    fontFamily: 'DMSans_400Regular',
-    color: '#8E8E93',
-  },
-  unreadMessagePreview: {
-    fontFamily: 'DMSans_500Medium',
-    color: '#333',
+  unreadIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#007AFF',
+    marginLeft: 8,
+    alignSelf: 'center',
   },
 });
 
-export default MessagesScreen;
+export default NotificationsTabScreen;

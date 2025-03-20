@@ -18,6 +18,8 @@ import type * as earnings from "../earnings.js";
 import type * as file from "../file.js";
 import type * as flutterwave from "../flutterwave.js";
 import type * as http from "../http.js";
+import type * as messages from "../messages.js";
+import type * as notifications from "../notifications.js";
 import type * as post from "../post.js";
 import type * as push from "../push.js";
 import type * as pushTokens from "../pushTokens.js";
@@ -39,6 +41,8 @@ declare const fullApi: ApiFromModules<{
   file: typeof file;
   flutterwave: typeof flutterwave;
   http: typeof http;
+  messages: typeof messages;
+  notifications: typeof notifications;
   post: typeof post;
   push: typeof push;
   pushTokens: typeof pushTokens;
