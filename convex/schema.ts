@@ -198,6 +198,37 @@ export const PushToken = {
   token: v.string(),
   createdAt: v.string(),
 };
+export const VehicleTracking = {
+  bookingId: v.id('bookings'),
+  postId: v.id('posts'),
+  renterId: v.id('users'),
+  ownerId: v.id('users'),
+  status: v.string(), 
+  currentLocation: v.object({
+    latitude: v.number(),
+    longitude: v.number(),
+  }),
+  locationHistory: v.array(v.object({
+    latitude: v.number(),
+    longitude: v.number(),
+    timestamp: v.string(),
+  })),
+  startedAt: v.string(),
+  lastUpdatedAt: v.string(),
+  endedAt: v.optional(v.string()),
+  boundaries: v.optional(v.object({
+    maxLatitude: v.number(),
+    minLatitude: v.number(),
+    maxLongitude: v.number(),
+    minLongitude: v.number(),
+  })),
+  alerts: v.optional(v.array(v.object({
+    type: v.string(),
+    timestamp: v.string(),
+    details: v.string(),
+    resolved: v.boolean(),
+  }))),
+};
 
 
 
@@ -229,6 +260,8 @@ export default defineSchema({
       searchField: 'carDescription',
       filterFields: ['carMake', 'carModel', 'carYear', 'carLocation', 'status']
     }),
+    vehicleTracking:defineTable(VehicleTracking),
+    
     
 
   bookings: defineTable(Booking)

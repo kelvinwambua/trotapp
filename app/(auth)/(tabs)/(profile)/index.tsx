@@ -57,7 +57,7 @@ const ProfileScreen = () => {
 
   const accountItems = [
     {
-      id: 'track',
+      id: 'tracking',
       title: 'Track Your Vehicles',
       icon: 'radar',
       status: 'Tracking'

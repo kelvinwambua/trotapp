@@ -279,7 +279,20 @@ export const createBooking = mutation({
       paymentMethod: args.paymentMethod,
       transactionId: args.transactionId,
     });
-    
+    const trackingId = await ctx.db.insert("vehicleTracking", {
+        bookingId,
+        postId: args.postId,
+        renterId: user._id,
+        ownerId: post.posterId,
+        status: "active",
+        currentLocation: {
+          latitude: 0, // These will be updated when tracking begins
+          longitude: 0,
+        },
+        locationHistory: [],
+        startedAt: new Date().toISOString(),
+        lastUpdatedAt: new Date().toISOString(),
+      });
     
     await ctx.db.insert("transactions", {
       bookingId,

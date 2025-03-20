@@ -9,13 +9,13 @@ import { api } from '@/convex/_generated/api';
 import { formatDistanceToNow } from 'date-fns';
 import { router } from 'expo-router';
 import { Id } from '@/convex/_generated/dataModel';
-import MessagesScreen from './MessagesScreen';  // Import your existing MessagesScreen
+import MessagesScreen from './MessagesScreen';  
 
-// Define notification types
+
 type NotificationType = 'post_liked' | 'post_commented' | 'booking_request' | 'booking_approved' | 
   'booking_rejected' | 'user_followed' | 'message_received' | 'payment_received' | 'payment_requested';
 
-// Define related entity types
+
 type RelatedEntity = {
   type: 'post' | 'user' | 'booking' | 'message';
   title?: string;
@@ -28,7 +28,6 @@ type RelatedEntity = {
   preview?: string;
 };
 
-// Define notification interface
 interface Notification {
   _id: Id<'notifications'>;
   userId: Id<'users'>;
@@ -67,15 +66,15 @@ const NotificationsTabScreen = () => {
   const markAllNotificationsRead = useMutation(api.notifications.markAllNotificationsRead);
 
   const handleNotificationPress = useCallback((notification: Notification) => {
-    // Mark notification as read
+    
     markNotificationRead({ notificationId: notification._id });
 
-    // Navigate based on notification type
+  
     if (notification.actionUrl) {
-      // Handle custom action URL
+    
       router.push(notification.actionUrl);
     } else if (notification.relatedEntity) {
-      // Navigate based on related entity type
+    
       switch (notification.relatedEntity.type) {
         case 'post':
           router.push({
@@ -119,11 +118,11 @@ const NotificationsTabScreen = () => {
     );
   }
 
-  // Render a notification item
+  
   const renderNotificationItem = ({ item }: { item: Notification }) => {
     const timeAgo = formatDistanceToNow(new Date(item.createdAt), { addSuffix: true });
     
-    // Determine icon based on notification type
+  
     let iconName = 'bell-outline';
     let iconColor = '#007AFF';
     

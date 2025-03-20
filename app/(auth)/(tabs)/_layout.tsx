@@ -95,17 +95,7 @@ const Layout = () => {
           ),
         }}
       />
-      <Tabs.Screen
-        name="bookdetails"
-        options={{
-          title: 'Booking details',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.tabIconContainer, focused && styles.focusedTabItem]}>
-              <MaterialIcons name="handshake" size={24} color={color} />
-            </View>
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="(profile)"
         options={{
