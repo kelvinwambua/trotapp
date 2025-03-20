@@ -87,6 +87,7 @@ const Layout = () => {
         name="(messages)"
         options={{
           title: 'Inbox',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.tabIconContainer, focused && styles.focusedTabItem]}>
               <MaterialIcons name="inbox" size={24} color={color} />

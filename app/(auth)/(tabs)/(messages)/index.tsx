@@ -1,336 +1,306 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet,ScrollView, TouchableOpacity, TextInput,Modal } from 'react-native';
-// import { ScrollView } from 'react-native-gesture-handler';
-import { MaterialIcons } from '@expo/vector-icons';
+
+import React, { useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, FlatList, Image, ActivityIndicator, Pressable } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUser } from '@clerk/clerk-expo';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { formatDistanceToNow } from 'date-fns';
 import { router } from 'expo-router';
+import { Id } from '@/convex/_generated/dataModel';
 
-export default function MessagesScreen() {
-
-  const [filterModalVisible,setFilterModalVisible]=useState(false)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [expandedNotification, setExpandedNotification] = useState(null);
-
-  const messages = [
-    { id: 1, sender: 'Sammy', text: 'Hello ...', unread: true },
-    { id: 2, sender: 'James Mwololo', text: 'Come pick up your car today', unread: true },
-    { id: 3, sender: 'Kerry Luvai', text: 'My car ran into an issue. What ...', unread: false },
-    { id: 4, sender: 'Joab Bodo', text: 'Hello, I would like to rent your Toyota...', unread: false },
-  ];
-
-
-  const filteredMessages = messages.filter((message) => {
-    const matchesSearch = message.sender.toLowerCase().includes(searchQuery.toLowerCase()) || message.text.toLowerCase().includes(searchQuery.toLowerCase());
-    if (activeFilter === 'All') return matchesSearch;
-    if (activeFilter === 'Unread') return matchesSearch && message.unread;
-    if (activeFilter === 'Read') return matchesSearch && !message.unread;
-    return matchesSearch;
+const MessagesScreen = () => {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const insets = useSafeAreaInsets();
+  const [fontsLoaded] = useFonts({
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
   });
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, sender: 'Jamie', content: 'Jamie has rented your car', details: 'Jamie picked up the car at 10 AM and will return it on Friday.', read: false },
-    { id: 2, sender: 'Alex', content: 'Alex sent a message', details: 'Alex asked about the car’s fuel efficiency and insurance details.', read: false },
-  ]);
+  
+  const convexUser = useQuery(api.users.current);
+  const chatThreads = useQuery(
+    api.messages.getUserChatThreads, 
+    convexUser?._id ? { userId: convexUser._id } : "skip"
+  );
+  const unreadCount = useQuery(api.messages.getUnreadMessageCount);
 
+  const navigateToChat = useCallback((threadId: Id<"chats">) => {
+    router.push({
+      pathname: "/(messages)/[id]",
+      params: { id: threadId }
+    });
+  }, []);
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
-  };
+  const navigateToNewMessage = useCallback(() => {
+    // router.push("/(auth)/(tabs)/messages/new");
+  }, []);
 
-  const clearNotifications = () => {
-    setNotifications([]);
+  if (!isLoaded || !isSignedIn || !fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  const renderChatThread = ({ item }) => {
+    const otherUser = item.otherParticipants[0];
+    const lastMessage = item.latestMessage?.content || 'Start a conversation';
+    const lastMessageTime = item.latestMessage?.timestamp 
+      ? formatDistanceToNow(new Date(item.latestMessage.timestamp), { addSuffix: true })
+      : 'Just now';
+    
+    return (
+      <TouchableOpacity 
+        style={styles.chatThreadItem}
+        onPress={() => navigateToChat(item._id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.avatarContainer}>
+          {otherUser?.imageUrl ? (
+            <Image 
+              source={{ uri: otherUser.imageUrl }} 
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>
+                {otherUser?.firstName?.[0] || otherUser?.username?.[0] || '?'}
+              </Text>
+            </View>
+          )}
+          {item.unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadText}>{item.unreadCount}</Text>
+            </View>
+          )}
+        </View>
+        
+        <View style={styles.threadContent}>
+          <View style={styles.threadHeader}>
+            <Text style={styles.userName} numberOfLines={1}>
+              {otherUser?.firstName && otherUser?.lastName 
+                ? `${otherUser.firstName} ${otherUser.lastName}`
+                : otherUser?.username || 'Unknown User'}
+            </Text>
+            <Text style={styles.timeText}>{lastMessageTime}</Text>
+          </View>
+          <Text 
+            style={[
+              styles.messagePreview,
+              item.unreadCount > 0 && styles.unreadMessagePreview
+            ]}
+            numberOfLines={1}
+          >
+            {lastMessage}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={styles.searchBar}>
-          <MaterialIcons name='search' size={20} color={"#8c8e9b"}/>
-          <TextInput style={{ width: '93%' }} placeholder='Search messages' value={searchQuery} onChangeText={setSearchQuery} />
-        </View>
-        <TouchableOpacity onPress={() => setFilterModalVisible(true)} style={styles.notifications}>
-          <MaterialIcons name='notification-important' size={35} color={'#007AFF'} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Messages</Text>
+        <TouchableOpacity 
+          style={styles.newMessageButton}
+          onPress={navigateToNewMessage}
+        >
+          <MaterialCommunityIcons name="pencil" size={22} color="#007AFF" />
         </TouchableOpacity>
       </View>
 
-      <Modal
-        visible={filterModalVisible}
-        animationType='fade'
-        transparent={true}
-        onRequestClose={() => setFilterModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setFilterModalVisible(false)}
-            >
-              <MaterialIcons name='close' size={30} color={'#333'} />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Notifications</Text>
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={markAllAsRead} style={styles.actionButton}>
-                <Text style={styles.actionText}>Mark All as Read</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={clearNotifications} style={styles.actionButton}>
-                <Text style={styles.actionText}>Clear All</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {notifications.map((notification) => (
-                <TouchableOpacity
-                  key={notification.id}
-                  style={[styles.notificationItem, notification.read && styles.readNotification]}
-                  onPress={() => setExpandedNotification(expandedNotification === notification.id ? null : notification.id)}
-                >
-                  <MaterialIcons size={40} name='account-circle' color={'#007AFF'} />
-                  <View>
-                    <Text style={styles.notiName}>{notification.sender}</Text>
-                    <Text style={styles.notiContent}>{notification.content}</Text>
-                    {expandedNotification === notification.id && (
-                      <Text style={styles.notiDetails}>{notification.details}</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+      {chatThreads === undefined ? (
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#007AFF" />
         </View>
-      </Modal>
-
-      
-      <View style={styles.upperBar}>
-        <ScrollView contentContainerStyle={styles.filterContainer} horizontal showsHorizontalScrollIndicator={false}>
-          {['All', 'Unread', 'Read'].map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filter, activeFilter === filter && styles.activeFilter]}
-              onPress={() => setActiveFilter(filter)}
-            >
-              <Text style={styles.filterTxt}>{filter}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.messageContainer}>
-        {filteredMessages.map((message) => (
-          <TouchableOpacity onPress={()=>{
-            router.push('/(auth)/(messages)/chat')
-          }} key={message.id} style={styles.messageBox}>
-            <View style={styles.Left}>
-              <MaterialIcons size={50} name='account-circle' color={"#8c8e9b"} style={styles.icon}/>
-              <View style={styles.text}>
-                <Text style={styles.username}>{message.sender}</Text>
-                <Text style={styles.userTxt}>{message.text}</Text>
-              </View>
-            </View>
-            <View style={styles.Right}>
-              <Text style={styles.time}>10:13</Text>
-              {message.unread && <MaterialIcons size={10} name='circle' color={'#007AFF'}  />}
-            </View>
+      ) : chatThreads.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <MaterialCommunityIcons name="chat-outline" size={60} color="#CCCCCC" />
+          <Text style={styles.emptyText}>No messages yet</Text>
+          <Text style={styles.emptySubtext}>Start a conversation with someone</Text>
+          <TouchableOpacity 
+            style={styles.newChatButton}
+            onPress={navigateToNewMessage}
+          >
+            <Text style={styles.newChatButtonText}>New Message</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        </View>
+      ) : (
+        <FlatList
+          data={chatThreads}
+          renderItem={renderChatThread}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
-    // justifyContent: 'center',
-    alignItems: 'center',
-    padding:10
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  messageContainer:{
-      width:'100%',
-      // padding:5
-  },
-  icon:{
-    marginRight:20,
-  },
-  messageBox:{
-      flexDirection:'row',
-      height:80,
-      width:'100%',
-      // backgroundColor:'white',
-      borderRadius:10,
-      padding:10,
-      margin:10,
-      alignItems:'center',
-      justifyContent:'space-between',
-      // paddingRight:10
-  },
-  text:{
-      justifyContent:'flex-start'
-  },
-  username:{
-    fontSize:20,
-    fontFamily:'DMSans_700Bold'
-  },
-  userTxt:{
-    fontSize:12,
-    padding: 3,
-    fontFamily:'DMSans_700',
-    color: "#8c8e9b",
-  },
-  Left:{
-    flexDirection:'row',
-    alignItems:'center'
-  },
-  Right:{
-    justifyContent:'flex-end'
-  },
-  filter:{
-    borderRadius:10,
-    backgroundColor:'#007AFF',
-    height:40,
-    padding:9,
-    justifyContent:'center',
-    alignItems:'center',
-    
-  },
-  filterContainer:{
-    gap:5,
-    // justifyContent:'flex-start'
-    // height:20,
-
-  },
-  filterTxt:{
-      fontSize:15,
-      fontFamily:'DMSans_700Bold',
-      color:'white',
-  
-
-  },
-  upperBar:{
-    flexDirection:'row'
-  },
-  notifications:{
-    marginBottom: 20,
-
-  },
-  notificationNumber:{
-    position:'absolute',
-    right:5,
-    top:0
-
-  },
-  time:{
-      fontFamily:'DMSans_700Bold'
-  },
-  searchBar:{
-      width:'90%',
-      height:40,
-      backgroundColor:'#e0e0e0',
-      borderRadius:16,
-      flexDirection:'row',
-      justifyContent:'space-between',
-      alignItems:'center',
-      padding:10,
-      marginBottom: 20,
-      marginRight:10
-  },
-  modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: '#F8F9FA',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    height:100
+    backgroundColor: '#F8F9FA',
   },
-  modalContent: {
-    width: '85%',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  notificationContainer:{
-      padding:10,
-      
-  },
-  modalSubTitle:{
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    justifyContent:'flex-start'
-  },
-  notification:{
-    flexDirection:'row',
-    // width:'100%',
-    // backgroundColor:'grey',
-    borderRadius:15,
-    marginTop:15
-
-  },
-  notificationItem:{
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE'
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
   },
-  notiName:{
-    fontSize:20,
-    fontFamily:'DMSans_700Bold',
-    // color:'white',
+  headerTitle: {
+    fontSize: 24,
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
   },
-  notiContent:{
-    fontSize:14,
-    fontFamily:'DMSans_700Bold',
-    // color:'white'
+  newMessageButton: {
+    padding: 10,
+    backgroundColor: '#F0F8FF',
+    borderRadius: 16,
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  activeFilter:{
-    backgroundColor: '#005BBB'
-  },
-  modalOverlay: {
+  loadingContent: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  notiDetails:{
-    fontSize: 12,
-    color: '#777',
-    marginTop: 5,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
+  emptyText: {
+    fontSize: 18,
+    fontFamily: 'DMSans_700Bold',
+    color: '#333',
+    marginTop: 16,
   },
-  actionButton: {
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#666',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  newChatButton: {
     backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 10,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  actionText: {
+  newChatButtonText: {
+    fontSize: 16,
+    fontFamily: 'DMSans_700Bold',
     color: '#FFF',
-    fontWeight: 'bold',
   },
-  closeButton:{
-    
-  }
-  // today:{
-  //   height:200
-  // },
-  // earlier:{
-  // height:200
-
-  // }
+  listContent: {
+    padding: 16,
+  },
+  chatThreadItem: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#E1E1E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarInitial: {
+    fontSize: 22,
+    fontFamily: 'DMSans_700Bold',
+    color: '#888',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    right: -4,
+    top: -4,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadText: {
+    fontSize: 12,
+    fontFamily: 'DMSans_700Bold',
+    color: '#FFF',
+    paddingHorizontal: 4,
+  },
+  threadContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  threadHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  userName: {
+    fontSize: 16,
+    fontFamily: 'DMSans_700Bold',
+    color: '#1A1A1A',
+    flex: 1,
+    paddingRight: 8,
+  },
+  timeText: {
+    fontSize: 12,
+    fontFamily: 'DMSans_400Regular',
+    color: '#8E8E93',
+  },
+  messagePreview: {
+    fontSize: 14,
+    fontFamily: 'DMSans_400Regular',
+    color: '#8E8E93',
+  },
+  unreadMessagePreview: {
+    fontFamily: 'DMSans_500Medium',
+    color: '#333',
+  },
 });
+
+export default MessagesScreen;

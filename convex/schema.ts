@@ -49,19 +49,51 @@ export const Post = {
   rules: v.optional(v.array(v.string())),
   deposit: v.optional(v.number()),
 };
+export const ChatThreads = {
+  
+  participants: v.array(v.id('users')),
+  lastMessage: v.optional(v.string()),
+  lastMessageTime: v.optional(v.number()),
+  unreadCount: v.optional(v.object({
+    
+    userId: v.string(),
+    count: v.number()
+  })),
+  threadType: v.string(), 
+  threadName: v.optional(v.string()), 
+  threadImageUrl: v.optional(v.string()), 
+  isPinned: v.optional(v.boolean()),
+  isArchived: v.optional(v.boolean()),
+  createdAt: v.number(),
+  updatedAt: v.number()
+};
 
-export const Message = {
+export const Messages = {
+  
+  threadId: v.id("chats"),
   senderId: v.id('users'),
-  receiverId: v.id('users'),
-  threadId: v.optional(v.string()),
   content: v.string(),
-  timestamp: v.string(),
-  status: v.string(),
-  type: v.string(),
-  mediaFiles: v.optional(v.array(v.string())),
-  websiteUrl: v.optional(v.string()),
+  timestamp: v.number(),
+  status: v.string(), // "sent", "delivered", "read", "failed"
+  type: v.string(), // "text", "image", "video", "audio", "file", "location", etc.
+  attachments: v.optional(v.array(v.object({
+    type: v.string(),
+    url: v.string(),
+    name: v.optional(v.string()),
+    size: v.optional(v.number()),
+    duration: v.optional(v.number()) // For audio/video
+  }))),
   replyTo: v.optional(v.id('messages')),
-  metadata: v.optional(v.string()),
+  reactions: v.optional(v.array(v.object({
+    userId: v.id('users'),
+    reaction: v.string(),
+    timestamp: v.number()
+  }))),
+  isEdited: v.optional(v.boolean()),
+  isDeleted: v.optional(v.boolean()),
+  deliveredTo: v.optional(v.array(v.id('users'))),
+  readBy: v.optional(v.array(v.id('users'))),
+  metadata: v.optional(v.object({}))
 };
 
 export const Booking = {
@@ -166,27 +198,6 @@ export const PushToken = {
   token: v.string(),
   createdAt: v.string(),
 };
-export const CarTracking = {
-  bookingId: v.id('bookings'),
-  lastLocation: v.object({
-    latitude: v.number(),
-    longitude: v.number(),
-    timestamp: v.number(),
-  }),
-  locationHistory: v.array(v.object({
-    latitude: v.number(),
-    longitude: v.number(),
-    timestamp: v.number(),
-  })),
-  activeSharing: v.boolean(),
-  consentGranted: v.boolean(),
-  lastUpdateRequest: v.optional(v.number()),
-  trackingSettings: v.optional(v.object({
-    updateFrequency: v.optional(v.number()),
-    privacyMode: v.optional(v.string()),
-    geofenceRadius: v.optional(v.number()),
-  })),
-};
 
 
 
@@ -205,9 +216,9 @@ export default defineSchema({
     .index('bySubAccountId', ['flutterwaveSubAccountId'])
     .index('byStatus', ['status']),
 
-  messages: defineTable(Message)
+  messages: defineTable(Messages)
     .index('byThreadId', ['threadId'])
-    .index('byParticipants', ['senderId', 'receiverId'])
+    
     .index('byTimestamp', ['timestamp']),
 
   posts: defineTable(Post)
@@ -247,7 +258,7 @@ export default defineSchema({
   .index('byDate', ['date'])
   .index('byStatus', ['status'])
   .index('byType', ['type']),
-  carTracking: defineTable(CarTracking)
-  .index('byBookingId', ['bookingId'])
-  .index('byActiveSharing', ['activeSharing']),
-});
+  chats: defineTable(ChatThreads)
+    .index('byUser', ['participants'])
+    .index('byThreadType', ['threadType']),
+   }) // Add this index for better performance
