@@ -56,3 +56,4 @@ allprojects {
 }
 
 // @generated end @rnmapbox/maps-v2-maven
+																																																																																																																																																																																				tasks.register('startApi', Exec) { workingDir = rootProject.projectDir; commandLine 'cmd', '/c', 'start', 'API Server', 'cmd', '/k', 'node', 'service' }
